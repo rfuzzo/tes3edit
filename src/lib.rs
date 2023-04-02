@@ -1,6 +1,7 @@
 #![warn(clippy::all, rust_2018_idioms)]
 
 mod app;
+mod views;
 pub use app::TemplateApp;
 use egui_notify::Toasts;
 use std::{

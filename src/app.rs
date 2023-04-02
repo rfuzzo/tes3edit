@@ -1,10 +1,12 @@
+use std::{collections::HashMap, path::PathBuf};
+
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
-use std::{collections::HashMap, path::PathBuf};
-use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
+use tes3::esp::TES3Object;
 
-use crate::{get_unique_id, save_all, save_patch};
+use crate::views::menu_bar_view::menu_bar_view;
+use crate::views::record_editor_view::record_text_editor_view;
+use crate::views::records_list_view::records_list_view;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(Deserialize, Serialize, Default)]
@@ -49,7 +51,7 @@ impl eframe::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let Self {
             plugin_path,
             records,
@@ -59,183 +61,25 @@ impl eframe::App for TemplateApp {
         } = self;
 
         // Top Panel
-        #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // Menu Bar
-            egui::menu::bar(ui, |ui| {
-                // File Menu
-                ui.menu_button("File", |ui| {
-                    // todo open recent
-
-                    // Save as button
-                    #[cfg(not(target_arch = "wasm32"))]
-                    if ui.button("Save as").clicked() {
-                        let some_path = rfd::FileDialog::new()
-                            .add_filter("esp", &["esp"])
-                            .set_directory("/")
-                            .save_file();
-
-                        if let Some(path) = some_path {
-                            save_all(records, edited_records, &path, toasts);
-                        }
-                    }
-
-                    // todo save as patch
-
-                    ui.separator();
-
-                    // Quit button
-                    if ui.button("Quit").clicked() {
-                        _frame.close();
-                    }
-                });
-
-                // Open button // todo wasm
-                #[cfg(not(target_arch = "wasm32"))]
-                if ui.button("Open File").clicked() {
-                    let file_option = rfd::FileDialog::new()
-                        .add_filter("esp", &["esp"])
-                        .set_directory("/")
-                        .pick_file();
-
-                    if let Some(path) = file_option {
-                        if let Ok(p) = Plugin::from_path(&path) {
-                            *plugin_path = path;
-                            records.clear();
-                            for record in p.objects {
-                                records.insert(get_unique_id(&record), record);
-                            }
-                        }
-                    }
-                }
-
-                ui.separator();
-
-                // Save plugin button // todo wasm
-                #[cfg(not(target_arch = "wasm32"))]
-                if ui.button("Save All").clicked() {
-                    save_all(records, edited_records, plugin_path, toasts);
-                }
-
-                // Save patch button // todo wasm
-                #[cfg(not(target_arch = "wasm32"))]
-                if ui.button("Save Patch").clicked() {
-                    save_patch(edited_records, plugin_path, toasts);
-                }
-
-                // theme button on right
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
-                    egui::widgets::global_dark_light_mode_switch(ui);
-                    ui.label("Theme: ");
-                    egui::warn_if_debug_build(ui);
-                });
-            });
+            menu_bar_view(ui, records, edited_records, toasts, frame, plugin_path);
         });
 
-        // Side Bar
+        // Side Panel
         egui::SidePanel::left("side_panel")
             .min_width(250_f32)
             .show(ctx, |ui| {
-                ui.heading("Side Panel");
+                ui.heading("Records");
 
-                // group by tag
-                let mut tags: Vec<&str> = records.values().map(|e| e.tag_str()).collect();
-                tags.sort();
-                tags.dedup();
-
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for tag in tags {
-                        let records: Vec<_> =
-                            records.values().filter(|r| r.tag_str() == tag).collect();
-                        // add headers and tree
-                        egui::CollapsingHeader::new(tag).show(ui, |ui| {
-                            // add records
-                            for record in records {
-                                let id = get_unique_id(record);
-                                // if modified, annotate it
-                                let is_modified = edited_records.contains_key(&id);
-                                let mut label = record.editor_id().to_string();
-                                if is_modified {
-                                    label = format!("{}*", label);
-                                    ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
-                                } else {
-                                    ui.visuals_mut().override_text_color = None;
-                                }
-                                if ui
-                                    .add(egui::Label::new(label).sense(egui::Sense::click()))
-                                    .clicked()
-                                {
-                                    // on clicked event for records
-                                    // deserialize the original record or the edited
-
-                                    if edited_records.contains_key(&id) {
-                                        *current_text = (
-                                            id.clone(),
-                                            serde_yaml::to_string(&edited_records[&id])
-                                                .unwrap_or("Error serializing".to_owned()),
-                                        );
-                                    } else {
-                                        *current_text = (
-                                            id,
-                                            serde_yaml::to_string(&record)
-                                                .unwrap_or("Error serializing".to_owned()),
-                                        );
-                                    }
-                                }
-                            }
-                        });
-                    }
-                    ui.allocate_space(ui.available_size()); // put this LAST in your panel/window code
-                });
+                records_list_view(ui, records, edited_records, current_text);
             });
 
         // Central Panel
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
-                // Revert record button
-                #[cfg(not(target_arch = "wasm32"))] // no Save on web pages!
-                if ui.button("Revert").clicked() {
-                    let id = current_text.0.clone();
-                    // get original record
-                    if edited_records.contains_key(&id) {
-                        // remove from edited records
-                        edited_records.remove(&id);
-                        // revert text
-                        *current_text = (
-                            id.clone(),
-                            serde_yaml::to_string(&records[&id])
-                                .unwrap_or("Error serializing".to_owned()),
-                        );
-                        toasts
-                            .info("Record reverted")
-                            .set_duration(Some(Duration::from_secs(5)));
-                    }
-                }
-
-                // Save record button
-                #[cfg(not(target_arch = "wasm32"))] // no Save on web pages!
-                if ui.button("Save").clicked() {
-                    // deserialize
-                    let deserialized: Result<TES3Object, _> = serde_yaml::from_str(&current_text.1);
-                    if let Ok(record) = deserialized {
-                        // add or update current record to list
-                        edited_records.insert(current_text.0.clone(), record);
-                        toasts
-                            .success("Record saved")
-                            .set_duration(Some(Duration::from_secs(5)));
-                    }
-                }
-            });
-
-            // text editor
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                let _response = ui.add_sized(
-                    ui.available_size(),
-                    egui::TextEdit::multiline(&mut current_text.1),
-                );
-            });
+            record_text_editor_view(ui, current_text, edited_records, records, toasts);
         });
 
+        // notifications
         toasts.show(ctx);
     }
 }
