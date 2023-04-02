@@ -9,7 +9,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-use tes3::esp::{EditorId, FixedString, Header, ObjectFlags, Plugin, TES3Object, TypeInfo};
+use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
 
 //////////////////////////////////////////
 // Common
@@ -43,7 +43,7 @@ pub fn get_records(
     }
 
     // sort records
-    // todo sort all records
+    // todo sort all records, header first
     let mut records_vec: Vec<_> = final_records.values().cloned().collect();
     let pos = records_vec
         .iter()
@@ -80,24 +80,20 @@ pub fn save_all(
 }
 
 pub fn save_patch(
+    records: &mut HashMap<String, TES3Object>,
     edited_records: &mut HashMap<String, TES3Object>,
     plugin_path: &Path,
     toasts: &mut Toasts,
 ) {
-    // todo figure out a header
     let mut records_vec: Vec<_> = edited_records.values().cloned().collect();
-    records_vec.insert(
-        0,
-        TES3Object::Header(Header {
-            flags: ObjectFlags::empty(),
-            version: 1.0_f32,
-            file_type: tes3::esp::FileType::Esp,
-            author: FixedString("".into()),
-            description: FixedString("".into()),
-            num_objects: records_vec.len() as u32, //todo correct?
-            masters: vec![],
-        }),
-    );
+
+    // if a header in changed files, then take that one instead of the original one
+    // todo panic here since this is undefined behavior
+    let mut header = records.get("TES3,").unwrap();
+    if let Some(h) = edited_records.get("TES3,") {
+        header = h;
+    }
+    records_vec.insert(0, header.clone());
 
     // save
     let mut plugin = Plugin {

@@ -4,16 +4,25 @@ use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use tes3::esp::TES3Object;
 
-use crate::views::menu_bar_view::menu_bar_view;
+use crate::views::menu_bar_view::{menu_bar_view, UiArgs};
 use crate::views::record_editor_view::record_text_editor_view;
 use crate::views::records_list_view::records_list_view;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(Deserialize, Serialize, Default)]
+#[derive(Deserialize, Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
+    // serialized data
+    /// The currently loaded plugin path
     plugin_path: PathBuf,
 
+    /// The last directory used in the file picker
+    last_directory: PathBuf,
+
+    /// The last directory used in the file picker
+    light_mode: bool,
+
+    // runtime
     #[serde(skip)]
     records: HashMap<String, TES3Object>,
 
@@ -23,8 +32,23 @@ pub struct TemplateApp {
     #[serde(skip)]
     current_text: (String, String),
 
+    // ui
     #[serde(skip)]
     toasts: Toasts,
+}
+
+impl Default for TemplateApp {
+    fn default() -> Self {
+        Self {
+            plugin_path: "".into(),
+            last_directory: "/".into(),
+            records: HashMap::default(),
+            edited_records: HashMap::default(),
+            current_text: ("".into(), "".into()),
+            toasts: Toasts::default(),
+            light_mode: false,
+        }
+    }
 }
 
 impl TemplateApp {
@@ -46,6 +70,7 @@ impl TemplateApp {
 impl eframe::App for TemplateApp {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        // general storage save
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 
@@ -58,11 +83,24 @@ impl eframe::App for TemplateApp {
             edited_records,
             current_text,
             toasts,
+            last_directory,
+            light_mode,
         } = self;
+
+        // if light mode is requested but the app is in dark mode, we enable light mode
+        if *light_mode && ctx.style().visuals.dark_mode {
+            ctx.set_visuals(egui::Visuals::light());
+        }
 
         // Top Panel
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            menu_bar_view(ui, records, edited_records, toasts, frame, plugin_path);
+            menu_bar_view(
+                UiArgs::new(frame, ui, toasts, light_mode),
+                records,
+                edited_records,
+                plugin_path,
+                last_directory,
+            );
         });
 
         // Side Panel

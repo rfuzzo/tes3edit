@@ -30,6 +30,12 @@ pub(crate) fn records_list_view(
                     // if modified, annotate it
                     let is_modified = edited_records.contains_key(&id);
                     let mut label = record.editor_id().to_string();
+
+                    // hack for header record
+                    if label.is_empty() && record.tag_str() == "TES3" {
+                        label = "Header".into();
+                    }
+
                     if is_modified {
                         label = format!("{}*", label);
                         ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
