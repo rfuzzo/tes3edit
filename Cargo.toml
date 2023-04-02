@@ -14,9 +14,16 @@ eframe = { version = "0.21.0", default-features = false, features = [
     "glow",          # Use the glow rendering backend. Alternative: "wgpu".
     "persistence",   # Enable restoring app state when restarting the app.
 ] }
-
-# You only need serde if you want app persistence:
+egui-notify = "0.6"
+rfd = "0.11.0"
 serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+
+[dependencies.tes3]
+git = "https://github.com/Greatness7/tes3"
+branch = "dev"
+default-features = false
+features = ["esp", "serde"]
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

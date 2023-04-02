@@ -1,23 +1,28 @@
+use egui_notify::Toasts;
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
+use std::{collections::HashMap, path::PathBuf};
+use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
+
+use crate::{get_unique_id, save_all, save_patch};
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(Deserialize, Serialize, Default)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    // Example stuff:
-    label: String,
+    plugin_path: PathBuf,
 
-    // this how you opt-out of serialization of a member
     #[serde(skip)]
-    value: f32,
-}
+    records: HashMap<String, TES3Object>,
 
-impl Default for TemplateApp {
-    fn default() -> Self {
-        Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
-        }
-    }
+    #[serde(skip)]
+    edited_records: HashMap<String, TES3Object>,
+
+    #[serde(skip)]
+    current_text: (String, String),
+
+    #[serde(skip)]
+    toasts: Toasts,
 }
 
 impl TemplateApp {
@@ -45,72 +50,192 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
+        let Self {
+            plugin_path,
+            records,
+            edited_records,
+            current_text,
+            toasts,
+        } = self;
 
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-
+        // Top Panel
         #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
+            // Menu Bar
             egui::menu::bar(ui, |ui| {
+                // File Menu
                 ui.menu_button("File", |ui| {
+                    // todo open recent
+
+                    // Save as button
+                    #[cfg(not(target_arch = "wasm32"))]
+                    if ui.button("Save as").clicked() {
+                        let some_path = rfd::FileDialog::new()
+                            .add_filter("esp", &["esp"])
+                            .set_directory("/")
+                            .save_file();
+
+                        if let Some(path) = some_path {
+                            save_all(records, edited_records, &path, toasts);
+                        }
+                    }
+
+                    // todo save as patch
+
+                    ui.separator();
+
+                    // Quit button
                     if ui.button("Quit").clicked() {
                         _frame.close();
                     }
                 });
-            });
-        });
 
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
+                // Open button // todo wasm
+                #[cfg(not(target_arch = "wasm32"))]
+                if ui.button("Open File").clicked() {
+                    let file_option = rfd::FileDialog::new()
+                        .add_filter("esp", &["esp"])
+                        .set_directory("/")
+                        .pick_file();
 
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(label);
-            });
+                    if let Some(path) = file_option {
+                        if let Ok(p) = Plugin::from_path(&path) {
+                            *plugin_path = path;
+                            records.clear();
+                            for record in p.objects {
+                                records.insert(get_unique_id(&record), record);
+                            }
+                        }
+                    }
+                }
 
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                *value += 1.0;
-            }
+                ui.separator();
 
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
+                // Save plugin button // todo wasm
+                #[cfg(not(target_arch = "wasm32"))]
+                if ui.button("Save All").clicked() {
+                    save_all(records, edited_records, plugin_path, toasts);
+                }
+
+                // Save patch button // todo wasm
+                #[cfg(not(target_arch = "wasm32"))]
+                if ui.button("Save Patch").clicked() {
+                    save_patch(edited_records, plugin_path, toasts);
+                }
+
+                // theme button on right
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
+                    egui::widgets::global_dark_light_mode_switch(ui);
+                    ui.label("Theme: ");
+                    egui::warn_if_debug_build(ui);
                 });
             });
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
+        // Side Bar
+        egui::SidePanel::left("side_panel")
+            .min_width(250_f32)
+            .show(ctx, |ui| {
+                ui.heading("Side Panel");
 
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-            egui::warn_if_debug_build(ui);
+                // group by tag
+                let mut tags: Vec<&str> = records.values().map(|e| e.tag_str()).collect();
+                tags.sort();
+                tags.dedup();
+
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for tag in tags {
+                        let records: Vec<_> =
+                            records.values().filter(|r| r.tag_str() == tag).collect();
+                        // add headers and tree
+                        egui::CollapsingHeader::new(tag).show(ui, |ui| {
+                            // add records
+                            for record in records {
+                                let id = get_unique_id(record);
+                                // if modified, annotate it
+                                let is_modified = edited_records.contains_key(&id);
+                                let mut label = record.editor_id().to_string();
+                                if is_modified {
+                                    label = format!("{}*", label);
+                                    ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
+                                } else {
+                                    ui.visuals_mut().override_text_color = None;
+                                }
+                                if ui
+                                    .add(egui::Label::new(label).sense(egui::Sense::click()))
+                                    .clicked()
+                                {
+                                    // on clicked event for records
+                                    // deserialize the original record or the edited
+
+                                    if edited_records.contains_key(&id) {
+                                        *current_text = (
+                                            id.clone(),
+                                            serde_yaml::to_string(&edited_records[&id])
+                                                .unwrap_or("Error serializing".to_owned()),
+                                        );
+                                    } else {
+                                        *current_text = (
+                                            id,
+                                            serde_yaml::to_string(&record)
+                                                .unwrap_or("Error serializing".to_owned()),
+                                        );
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    ui.allocate_space(ui.available_size()); // put this LAST in your panel/window code
+                });
+            });
+
+        // Central Panel
+        egui::CentralPanel::default().show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                // Revert record button
+                #[cfg(not(target_arch = "wasm32"))] // no Save on web pages!
+                if ui.button("Revert").clicked() {
+                    let id = current_text.0.clone();
+                    // get original record
+                    if edited_records.contains_key(&id) {
+                        // remove from edited records
+                        edited_records.remove(&id);
+                        // revert text
+                        *current_text = (
+                            id.clone(),
+                            serde_yaml::to_string(&records[&id])
+                                .unwrap_or("Error serializing".to_owned()),
+                        );
+                        toasts
+                            .info("Record reverted")
+                            .set_duration(Some(Duration::from_secs(5)));
+                    }
+                }
+
+                // Save record button
+                #[cfg(not(target_arch = "wasm32"))] // no Save on web pages!
+                if ui.button("Save").clicked() {
+                    // deserialize
+                    let deserialized: Result<TES3Object, _> = serde_yaml::from_str(&current_text.1);
+                    if let Ok(record) = deserialized {
+                        // add or update current record to list
+                        edited_records.insert(current_text.0.clone(), record);
+                        toasts
+                            .success("Record saved")
+                            .set_duration(Some(Duration::from_secs(5)));
+                    }
+                }
+            });
+
+            // text editor
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                let _response = ui.add_sized(
+                    ui.available_size(),
+                    egui::TextEdit::multiline(&mut current_text.1),
+                );
+            });
         });
 
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally choose either panels OR windows.");
-            });
-        }
+        toasts.show(ctx);
     }
 }
