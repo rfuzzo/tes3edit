@@ -1,14 +1,17 @@
 #![warn(clippy::all, rust_2018_idioms)]
 
-mod app;
-mod views;
-pub use app::TemplateApp;
-use egui_notify::Toasts;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
     time::Duration,
 };
+
+pub use app::TemplateApp;
+use egui_notify::Toasts;
+
+mod app;
+mod editors;
+mod views;
 use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
 
 //////////////////////////////////////////

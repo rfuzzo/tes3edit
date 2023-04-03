@@ -13,6 +13,7 @@ pub(crate) fn records_list_view(
     // out
     edited_records: &mut HashMap<String, TES3Object>,
     current_text: &mut (String, String),
+    current_record: &mut Option<TES3Object>,
 ) {
     // group by tag
     let mut tags: Vec<&str> = records.values().map(|e| e.tag_str()).collect();
@@ -48,19 +49,20 @@ pub(crate) fn records_list_view(
                     {
                         // on clicked event for records
                         // deserialize the original record or the edited
-
                         if edited_records.contains_key(&id) {
                             *current_text = (
                                 id.clone(),
                                 serde_yaml::to_string(&edited_records[&id])
                                     .unwrap_or("Error serializing".to_owned()),
                             );
+                            *current_record = Some(edited_records[&id].clone());
                         } else {
                             *current_text = (
                                 id,
                                 serde_yaml::to_string(&record)
                                     .unwrap_or("Error serializing".to_owned()),
                             );
+                            *current_record = Some(record.clone());
                         }
                     }
                 }

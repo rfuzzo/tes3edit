@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use tes3::esp::TES3Object;
 
 use crate::views::menu_bar_view::{menu_bar_view, UiArgs};
-use crate::views::record_editor_view::record_text_editor_view;
+use crate::views::record_editor_view::record_editor_view;
 use crate::views::records_list_view::records_list_view;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -32,6 +32,9 @@ pub struct TemplateApp {
     #[serde(skip)]
     current_text: (String, String),
 
+    #[serde(skip)]
+    current_record: Option<TES3Object>,
+
     // ui
     #[serde(skip)]
     toasts: Toasts,
@@ -47,6 +50,7 @@ impl Default for TemplateApp {
             current_text: ("".into(), "".into()),
             toasts: Toasts::default(),
             light_mode: false,
+            current_record: None,
         }
     }
 }
@@ -85,6 +89,7 @@ impl eframe::App for TemplateApp {
             toasts,
             last_directory,
             light_mode,
+            current_record,
         } = self;
 
         // if light mode is requested but the app is in dark mode, we enable light mode
@@ -109,12 +114,16 @@ impl eframe::App for TemplateApp {
             .show(ctx, |ui| {
                 ui.heading("Records");
 
-                records_list_view(ui, records, edited_records, current_text);
+                records_list_view(ui, records, edited_records, current_text, current_record);
             });
 
         // Central Panel
         egui::CentralPanel::default().show(ctx, |ui| {
-            record_text_editor_view(ui, current_text, edited_records, records, toasts);
+            // custom editors
+            record_editor_view(ui, current_record, edited_records, records, toasts);
+
+            // text editor
+            //record_text_editor_view(ui, current_text, edited_records, records, toasts);
         });
 
         // notifications

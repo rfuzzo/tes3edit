@@ -289,6 +289,7 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#67ece8991aaf34332d38d1376c405dae36f9e98f"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -304,6 +305,7 @@ dependencies = [
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#67ece8991aaf34332d38d1376c405dae36f9e98f"
 dependencies = [
  "quote",
  "syn 2.0.12",
@@ -898,6 +900,7 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#67ece8991aaf34332d38d1376c405dae36f9e98f"
 dependencies = [
  "base64 0.21.0",
  "base64-simd",
@@ -918,6 +921,7 @@ dependencies = [
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#67ece8991aaf34332d38d1376c405dae36f9e98f"
 dependencies = [
  "cfg-if",
  "quote",
@@ -1581,6 +1585,7 @@ dependencies = [
 [[package]]
 name = "nif"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#67ece8991aaf34332d38d1376c405dae36f9e98f"
 dependencies = [
  "bstr",
  "bytes_io",
@@ -1598,6 +1603,7 @@ dependencies = [
 [[package]]
 name = "nif_macros"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#67ece8991aaf34332d38d1376c405dae36f9e98f"
 dependencies = [
  "dashmap",
  "hashbrown",
@@ -2373,6 +2379,7 @@ dependencies = [
 [[package]]
 name = "tes3"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#67ece8991aaf34332d38d1376c405dae36f9e98f"
 dependencies = [
  "esp",
  "nif",
