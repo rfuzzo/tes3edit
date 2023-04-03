@@ -20,8 +20,9 @@ serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 
 [dependencies.tes3]
-git = "https://github.com/Greatness7/tes3"
-branch = "dev"
+# git = "https://github.com/Greatness7/tes3"
+# branch = "dev"
+path = "Z:/Github/tes3"
 default-features = false
 features = ["esp", "serde"]
 

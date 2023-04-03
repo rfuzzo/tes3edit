@@ -44,6 +44,7 @@ pub(crate) fn menu_bar_view(
             // todo open recent
 
             // Save as button
+            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save As").clicked() {
                 let some_path = rfd::FileDialog::new()
                     .add_filter("esp", &["esp"])
@@ -57,6 +58,7 @@ pub(crate) fn menu_bar_view(
             }
 
             // Save as patch button
+            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save As Patch").clicked() {
                 let some_path = rfd::FileDialog::new()
                     .add_filter("esp", &["esp"])
@@ -72,12 +74,14 @@ pub(crate) fn menu_bar_view(
             ui.separator();
 
             // Quit button
+            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Quit").clicked() {
                 ui_args.frame.close();
             }
         });
 
         // Open button
+        #[cfg(not(target_arch = "wasm32"))]
         if ui.button("Open File").clicked() {
             let file_option = rfd::FileDialog::new()
                 .add_filter("esp", &["esp"])
@@ -97,6 +101,34 @@ pub(crate) fn menu_bar_view(
                     }
                 }
             }
+        }
+        #[cfg(target_arch = "wasm32")]
+        if ui.button("Open File").clicked() {
+            let future = async {
+                let file_option = rfd::AsyncFileDialog::new()
+                    .add_filter("esp", &["esp"])
+                    .set_directory(&last_directory)
+                    .pick_file()
+                    .await;
+
+                if let Some(path) = file_option {
+                    let data = path.read().await;
+
+                    let mut plugin = Plugin::new();
+                    if let Ok(p) = &plugin.load_bytes(&data) {
+                        //*plugin_path = path.clone();
+                        //*last_directory = path;
+
+                        // clear old data
+                        edited_records.clear();
+                        records.clear();
+                        for record in plugin.objects {
+                            records.insert(get_unique_id(&record), record);
+                        }
+                    }
+                }
+                //let data = file.unwrap().read().await;
+            };
         }
 
         ui.separator();

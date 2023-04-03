@@ -289,7 +289,6 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
-source = "git+https://github.com/Greatness7/tes3?branch=dev#8f97dcacc423e9b8843de83aa384f21dbb9fa139"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -305,7 +304,6 @@ dependencies = [
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
-source = "git+https://github.com/Greatness7/tes3?branch=dev#8f97dcacc423e9b8843de83aa384f21dbb9fa139"
 dependencies = [
  "quote",
  "syn 2.0.12",
@@ -900,7 +898,6 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
-source = "git+https://github.com/Greatness7/tes3?branch=dev#8f97dcacc423e9b8843de83aa384f21dbb9fa139"
 dependencies = [
  "base64 0.21.0",
  "base64-simd",
@@ -916,13 +913,11 @@ dependencies = [
  "rayon",
  "serde",
  "smart-default",
- "zstd",
 ]
 
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
-source = "git+https://github.com/Greatness7/tes3?branch=dev#8f97dcacc423e9b8843de83aa384f21dbb9fa139"
 dependencies = [
  "cfg-if",
  "quote",
@@ -1586,7 +1581,6 @@ dependencies = [
 [[package]]
 name = "nif"
 version = "0.0.1"
-source = "git+https://github.com/Greatness7/tes3?branch=dev#8f97dcacc423e9b8843de83aa384f21dbb9fa139"
 dependencies = [
  "bstr",
  "bytes_io",
@@ -1604,7 +1598,6 @@ dependencies = [
 [[package]]
 name = "nif_macros"
 version = "0.0.1"
-source = "git+https://github.com/Greatness7/tes3?branch=dev#8f97dcacc423e9b8843de83aa384f21dbb9fa139"
 dependencies = [
  "dashmap",
  "hashbrown",
@@ -2380,7 +2373,6 @@ dependencies = [
 [[package]]
 name = "tes3"
 version = "0.0.1"
-source = "git+https://github.com/Greatness7/tes3?branch=dev#8f97dcacc423e9b8843de83aa384f21dbb9fa139"
 dependencies = [
  "esp",
  "nif",
@@ -3114,33 +3106,3 @@ name = "xml-rs"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
-
-[[package]]
-name = "zstd"
-version = "0.12.3+zstd.1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76eea132fb024e0e13fd9c2f5d5d595d8a967aa72382ac2f9d39fcc95afd0806"
-dependencies = [
- "zstd-safe",
-]
-
-[[package]]
-name = "zstd-safe"
-version = "6.0.4+zstd.1.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7afb4b54b8910cf5447638cb54bf4e8a65cbedd783af98b98c62ffe91f185543"
-dependencies = [
- "libc",
- "zstd-sys",
-]
-
-[[package]]
-name = "zstd-sys"
-version = "2.0.7+zstd.1.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94509c3ba2fe55294d752b79842c530ccfab760192521df74a081a78d2b3c7f5"
-dependencies = [
- "cc",
- "libc",
- "pkg-config",
-]
