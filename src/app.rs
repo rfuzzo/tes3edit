@@ -32,8 +32,10 @@ pub struct TemplateApp {
     #[serde(skip)]
     current_text: (String, String),
 
+    // #[serde(skip)]
+    // current_record: Option<&TES3Object>,
     #[serde(skip)]
-    current_record: Option<TES3Object>,
+    current_record_id: Option<String>,
 
     // ui
     #[serde(skip)]
@@ -50,7 +52,7 @@ impl Default for TemplateApp {
             current_text: ("".into(), "".into()),
             toasts: Toasts::default(),
             light_mode: false,
-            current_record: None,
+            current_record_id: None,
         }
     }
 }
@@ -89,7 +91,7 @@ impl eframe::App for TemplateApp {
             toasts,
             last_directory,
             light_mode,
-            current_record,
+            current_record_id,
         } = self;
 
         // if light mode is requested but the app is in dark mode, we enable light mode
@@ -114,14 +116,15 @@ impl eframe::App for TemplateApp {
             .show(ctx, |ui| {
                 ui.heading("Records");
 
-                records_list_view(ui, records, edited_records, current_text, current_record);
+                records_list_view(ui, records, edited_records, current_text, current_record_id);
             });
 
         // Central Panel
         egui::CentralPanel::default().show(ctx, |ui| {
             // custom editors
-            record_editor_view(ui, current_record, edited_records, records, toasts);
-
+            if let Some(record) = current_record_id {
+                record_editor_view(ui, record, edited_records, records, toasts);
+            }
             // text editor
             //record_text_editor_view(ui, current_text, edited_records, records, toasts);
         });

@@ -9,10 +9,10 @@ rust-version = "1.65"
 [dependencies]
 egui = "0.21.0"
 eframe = { version = "0.21.0", default-features = false, features = [
-    #"accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
-    "default_fonts", # Embed the default egui fonts.
-    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
-    "persistence",   # Enable restoring app state when restarting the app.
+  #"accesskit",     # Make egui comptaible with screen readers. NOTE: adds a lot of dependencies.
+  "default_fonts", # Embed the default egui fonts.
+  "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+  "persistence",   # Enable restoring app state when restarting the app.
 ] }
 egui-notify = "0.6"
 rfd = "0.11.0"
@@ -20,10 +20,11 @@ serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 
 [dependencies.tes3]
-git = "https://github.com/rfuzzo/tes3"
-branch = "remove-zstd"
+# git = "https://github.com/rfuzzo/tes3"
+# branch = "remove-zstd"
+path = "/Users/ghost/Documents/Developer/tes3" # on mac
 default-features = false
-features = ["esp", "serde"]
+features = ["esp", "serde", "egui"]
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
