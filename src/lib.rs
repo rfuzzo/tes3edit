@@ -10,7 +10,6 @@ pub use app::TemplateApp;
 use egui_notify::Toasts;
 
 mod app;
-mod editors;
 mod views;
 use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
 

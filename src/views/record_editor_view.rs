@@ -5,8 +5,6 @@ use egui_notify::Toasts;
 use tes3::esp::traits::editor::Editor;
 use tes3::esp::TES3Object;
 
-use crate::get_unique_id;
-
 #[allow(dead_code)]
 pub(crate) fn record_text_editor_view(
     ui: &mut egui::Ui,
@@ -65,7 +63,7 @@ pub(crate) fn record_editor_view(
     current_record_id: &mut String,
     edited_records: &mut HashMap<String, TES3Object>,
     records: &mut HashMap<String, TES3Object>,
-    toasts: &mut Toasts,
+    _toasts: &mut Toasts,
 ) {
     //if let Some(record) = current_record {
     // editor menu bar
@@ -103,9 +101,9 @@ pub(crate) fn record_editor_view(
         edited_records
             .get_mut(current_record_id)
             .unwrap()
-            .editor(ui);
+            .add_editor(ui);
     } else {
-        records.get_mut(current_record_id).unwrap().editor(ui);
+        records.get_mut(current_record_id).unwrap().add_editor(ui);
     }
 
     //current_record.editor(ui);

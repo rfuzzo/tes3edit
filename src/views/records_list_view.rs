@@ -12,7 +12,7 @@ pub(crate) fn records_list_view(
     records: &mut HashMap<String, TES3Object>,
     // out
     edited_records: &mut HashMap<String, TES3Object>,
-    current_text: &mut (String, String),
+    _current_text: &mut (String, String),
     //current_record: &mut &TES3Object,
     current_record_id: &mut Option<String>,
 ) {
