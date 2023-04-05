@@ -25,7 +25,7 @@ branch = "remove-zstd"
 # path = "/Users/ghost/Documents/Developer/tes3" # on mac
 # path = "E:/GitHub/tes3conv/libs/tes3" # onpc
 default-features = false
-features = ["esp", "serde", "egui"]
+features = ["esp", "egui"]
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
