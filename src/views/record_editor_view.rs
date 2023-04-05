@@ -96,15 +96,20 @@ pub(crate) fn record_editor_view(
 
     //});
     //}
+    //
+    let scroll_area = egui::ScrollArea::vertical();
 
-    if edited_records.contains_key(current_record_id) {
-        edited_records
-            .get_mut(current_record_id)
-            .unwrap()
-            .add_editor(ui);
-    } else {
-        records.get_mut(current_record_id).unwrap().add_editor(ui);
-    }
+    //ui.add_sized(ui.available_size(), scroll_area);
+    scroll_area.show(ui, |ui| {
+        if edited_records.contains_key(current_record_id) {
+            edited_records
+                .get_mut(current_record_id)
+                .unwrap()
+                .add_editor(ui);
+        } else {
+            records.get_mut(current_record_id).unwrap().add_editor(ui);
+        }
+    });
 
     //current_record.editor(ui);
 }
