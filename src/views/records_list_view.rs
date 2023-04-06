@@ -12,8 +12,6 @@ pub(crate) fn records_list_view(
     records: &mut HashMap<String, TES3Object>,
     // out
     edited_records: &mut HashMap<String, TES3Object>,
-    _current_text: &mut (String, String),
-    //current_record: &mut &TES3Object,
     current_record_id: &mut Option<String>,
 ) {
     // group by tag
@@ -48,25 +46,6 @@ pub(crate) fn records_list_view(
                         .add(egui::Label::new(label).sense(egui::Sense::click()))
                         .clicked()
                     {
-                        // on clicked event for records
-                        // deserialize the original record or the edited
-                        // if edited_records.contains_key(&id) {
-                        //     // *current_text = (
-                        //     //     id.clone(),
-                        //     //     serde_yaml::to_string(&edited_records[&id])
-                        //     //         .unwrap_or("Error serializing".to_owned()),
-                        //     // );
-                        //     //*current_record = &edited_records[&id];
-
-                        // } else {
-                        //     // *current_text = (
-                        //     //     id,
-                        //     //     serde_yaml::to_string(&record)
-                        //     //         .unwrap_or("Error serializing".to_owned()),
-                        //     // );
-                        //     //*current_record = record;
-                        //     //*current_record = record;
-                        // }
                         *current_record_id = Some(id);
                     }
                 }

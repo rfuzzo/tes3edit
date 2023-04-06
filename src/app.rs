@@ -16,6 +16,9 @@ pub struct TemplateApp {
     /// The currently loaded plugin path
     plugin_path: PathBuf,
 
+    /// Recently opened plugins
+    recent_plugins: Vec<PathBuf>,
+
     /// The last directory used in the file picker
     last_directory: PathBuf,
 
@@ -30,11 +33,6 @@ pub struct TemplateApp {
     edited_records: HashMap<String, TES3Object>,
 
     #[serde(skip)]
-    current_text: (String, String),
-
-    // #[serde(skip)]
-    // current_record: Option<&TES3Object>,
-    #[serde(skip)]
     current_record_id: Option<String>,
 
     // ui
@@ -46,10 +44,10 @@ impl Default for TemplateApp {
     fn default() -> Self {
         Self {
             plugin_path: "".into(),
+            recent_plugins: vec![],
             last_directory: "/".into(),
             records: HashMap::default(),
             edited_records: HashMap::default(),
-            current_text: ("".into(), "".into()),
             toasts: Toasts::default(),
             light_mode: false,
             current_record_id: None,
@@ -85,9 +83,9 @@ impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let Self {
             plugin_path,
+            recent_plugins,
             records,
             edited_records,
-            current_text,
             toasts,
             last_directory,
             light_mode,
@@ -106,6 +104,7 @@ impl eframe::App for TemplateApp {
                 records,
                 edited_records,
                 plugin_path,
+                recent_plugins,
                 last_directory,
             );
         });
@@ -116,17 +115,14 @@ impl eframe::App for TemplateApp {
             .show(ctx, |ui| {
                 ui.heading("Records");
 
-                records_list_view(ui, records, edited_records, current_text, current_record_id);
+                records_list_view(ui, records, edited_records, current_record_id);
             });
 
         // Central Panel
         egui::CentralPanel::default().show(ctx, |ui| {
-            // custom editors
             if let Some(record) = current_record_id {
                 record_editor_view(ui, record, edited_records, records, toasts);
             }
-            // text editor
-            //record_text_editor_view(ui, current_text, edited_records, records, toasts);
         });
 
         // notifications

@@ -35,6 +35,7 @@ pub(crate) fn menu_bar_view(
     records: &mut HashMap<String, TES3Object>,
     edited_records: &mut HashMap<String, TES3Object>,
     plugin_path: &mut PathBuf,
+    recent_plugins: &mut Vec<PathBuf>,
     last_directory: &mut PathBuf,
 ) {
     // Menu Bar
@@ -42,6 +43,23 @@ pub(crate) fn menu_bar_view(
         // File Menu
         ui.menu_button("File", |ui| {
             // todo open recent
+            #[cfg(not(target_arch = "wasm32"))]
+            ui.menu_button("Recently Opened", |ui| {
+                for path in recent_plugins.clone() {
+                    let label = path.display().to_string();
+                    if ui.button(label).clicked() {
+                        // open the plugin
+                        open_plugin(
+                            path.to_path_buf(),
+                            plugin_path,
+                            last_directory,
+                            edited_records,
+                            records,
+                            recent_plugins,
+                        );
+                    }
+                }
+            });
 
             // Save as button
             #[cfg(not(target_arch = "wasm32"))]
@@ -89,17 +107,14 @@ pub(crate) fn menu_bar_view(
                 .pick_file();
 
             if let Some(path) = file_option {
-                if let Ok(p) = Plugin::from_path(&path) {
-                    *plugin_path = path.clone();
-                    *last_directory = path;
-
-                    // clear old data
-                    edited_records.clear();
-                    records.clear();
-                    for record in p.objects {
-                        records.insert(get_unique_id(&record), record);
-                    }
-                }
+                open_plugin(
+                    path,
+                    plugin_path,
+                    last_directory,
+                    edited_records,
+                    records,
+                    recent_plugins,
+                );
             }
         }
         #[cfg(target_arch = "wasm32")]
@@ -152,6 +167,35 @@ pub(crate) fn menu_bar_view(
     });
 }
 
+fn open_plugin(
+    path: PathBuf,
+    plugin_path: &mut PathBuf,
+    last_directory: &mut PathBuf,
+    edited_records: &mut HashMap<String, TES3Object>,
+    records: &mut HashMap<String, TES3Object>,
+    recent_plugins: &mut Vec<PathBuf>,
+) {
+    if let Ok(p) = Plugin::from_path(&path) {
+        *plugin_path = path.clone();
+        *last_directory = path;
+        let path = plugin_path.to_path_buf();
+        if !recent_plugins.contains(&path) {
+            recent_plugins.push(path);
+        }
+        recent_plugins.dedup();
+        if recent_plugins.len() > 10 {
+            recent_plugins.remove(0);
+        }
+
+        // clear old data
+        edited_records.clear();
+        records.clear();
+        for record in p.objects {
+            records.insert(get_unique_id(&record), record);
+        }
+    }
+}
+
 // taken from egui
 fn global_dark_light_mode_switch(ui: &mut egui::Ui, light_mode: &mut bool) {
     let style: egui::Style = (*ui.ctx().style()).clone();
@@ -159,6 +203,5 @@ fn global_dark_light_mode_switch(ui: &mut egui::Ui, light_mode: &mut bool) {
     if let Some(visuals) = new_visuals {
         *light_mode = !visuals.dark_mode;
         ui.ctx().set_visuals(visuals);
-        // update self
     }
 }

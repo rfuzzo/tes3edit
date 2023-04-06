@@ -252,7 +252,7 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#fafe680ebaa0017260d6cf54e9c08a39101da475"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#de54e8a76f4d07096f32eff5ec287dc0ffe09db4"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -267,7 +267,7 @@ dependencies = [
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#fafe680ebaa0017260d6cf54e9c08a39101da475"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#de54e8a76f4d07096f32eff5ec287dc0ffe09db4"
 dependencies = [
  "quote",
  "syn 2.0.12",
@@ -747,7 +747,7 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#fafe680ebaa0017260d6cf54e9c08a39101da475"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#de54e8a76f4d07096f32eff5ec287dc0ffe09db4"
 dependencies = [
  "bitflags 2.0.2",
  "bstr",
@@ -761,14 +761,12 @@ dependencies = [
  "itoa",
  "rayon",
  "smart-default",
- "strum",
- "strum_macros",
 ]
 
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#fafe680ebaa0017260d6cf54e9c08a39101da475"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#de54e8a76f4d07096f32eff5ec287dc0ffe09db4"
 dependencies = [
  "cfg-if",
  "quote",
@@ -1741,18 +1739,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustversion"
-version = "1.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f3208ce4d8448b3f3e7d168a73f5e0c43a61e32930de3bceeccedb388b6bf06"
-
-[[package]]
-name = "ryu"
-version = "1.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f91339c0467de62360649f8d3e185ca8de4224ff281f66000de5eb2a77a79041"
-
-[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1819,19 +1805,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0efd8caf556a6cebd3b285caf480045fcc1ac04f6bd786b09a6f11af30c4fcf4"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "serde_yaml"
-version = "0.9.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f82e6c8c047aa50a7328632d067bcae6ef38772a79e28daf32f735e0e4f3dd10"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
 ]
 
 [[package]]
@@ -1930,25 +1903,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9df65f20698aeed245efdde3628a6b559ea1239bbb871af1b6e3b58c413b2bd1"
 
 [[package]]
-name = "strum"
-version = "0.24.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "063e6045c0e62079840579a7e47a355ae92f60eb74daaf156fb1e84ba164e63f"
-
-[[package]]
-name = "strum_macros"
-version = "0.24.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e385be0d24f186b4ce2f9982191e7101bb737312ad61c1f2f984f34bcf85d59"
-dependencies = [
- "heck",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1986,7 +1940,7 @@ dependencies = [
 [[package]]
 name = "tes3"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#fafe680ebaa0017260d6cf54e9c08a39101da475"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#de54e8a76f4d07096f32eff5ec287dc0ffe09db4"
 dependencies = [
  "esp",
 ]
@@ -2001,7 +1955,6 @@ dependencies = [
  "egui-notify",
  "rfd",
  "serde",
- "serde_yaml",
  "tes3",
  "tracing-subscriber",
  "tracing-wasm",
@@ -2207,12 +2160,6 @@ checksum = "5c5713f0fc4b5db668a2ac63cdb7bb4469d8c9fed047b1d0292cc7b0ce2ba921"
 dependencies = [
  "tinyvec",
 ]
-
-[[package]]
-name = "unsafe-libyaml"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad2024452afd3874bf539695e04af6732ba06517424dbf958fdb16a01f3bef6c"
 
 [[package]]
 name = "url"
