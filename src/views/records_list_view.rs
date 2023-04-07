@@ -21,11 +21,11 @@ pub(crate) fn records_list_view(
 
     egui::ScrollArea::vertical().show(ui, |ui| {
         for tag in tags {
-            let records: Vec<_> = records.values().filter(|r| r.tag_str() == tag).collect();
+            let records_list: Vec<_> = records.values().filter(|r| r.tag_str() == tag).collect();
             // add headers and tree
             egui::CollapsingHeader::new(tag).show(ui, |ui| {
                 // add records
-                for record in records {
+                for record in records_list {
                     let id = get_unique_id(record);
                     // if modified, annotate it
                     let is_modified = edited_records.contains_key(&id);
@@ -46,6 +46,27 @@ pub(crate) fn records_list_view(
                         .add(egui::Label::new(label).sense(egui::Sense::click()))
                         .clicked()
                     {
+                        // selected event
+
+                        // cleanup old records
+                        let mut to_remove = Vec::new();
+                        for (key, edited_record) in edited_records.clone() {
+                            if let Some(original) = records.get(&key) {
+                                // remove if no change
+                                if original.eq(&edited_record) && id != key {
+                                    to_remove.push(key);
+                                }
+                            }
+                        }
+                        for r in to_remove {
+                            edited_records.remove(&r);
+                        }
+
+                        // add a copy of this record to the edited records
+                        if !edited_records.contains_key(&id) {
+                            edited_records.insert(id.clone(), record.clone());
+                        }
+
                         *current_record_id = Some(id);
                     }
                 }
