@@ -4,7 +4,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
-use tes3::esp::TES3Object;
+use tes3::esp::{Plugin, TES3Object};
 
 use crate::views::record_editor_view::record_editor_view;
 use crate::views::records_list_view::records_list_view;
@@ -38,7 +38,7 @@ pub struct TemplateApp {
     /// temporarily when selecting a file to open.
     #[cfg(target_arch = "wasm32")]
     #[serde(skip)]
-    pub open_pdb_data: Rc<RefCell<Option<(String, Vec<u8>)>>>,
+    pub open_pdb_data: Rc<RefCell<Option<(String, Plugin)>>>,
 
     // ui
     #[serde(skip)]
@@ -77,9 +77,17 @@ impl TemplateApp {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn process_open_pdb_file_result(&self) {
-        if let Some((pdb_name, pdb_bytes)) = self.open_pdb_data.borrow_mut().take() {
+    fn process_open_pdb_file_result(&mut self) {
+        if let Some((_name, plugin)) = self.open_pdb_data.borrow_mut().take() {
             // todo
+            Self::open_plugin(
+                None,
+                &mut self.last_directory,
+                &mut self.recent_plugins,
+                plugin,
+                &mut self.edited_records,
+                &mut self.records,
+            );
         }
     }
 

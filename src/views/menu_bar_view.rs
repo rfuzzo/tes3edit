@@ -11,9 +11,8 @@ impl TemplateApp {
         // Menu Bar
         egui::menu::bar(ui, |ui| {
             // File Menu
+            #[cfg(not(target_arch = "wasm32"))]
             ui.menu_button("File", |ui| {
-                // todo open recent
-                #[cfg(not(target_arch = "wasm32"))]
                 ui.menu_button("Recently Opened", |ui| {
                     for path in self.recent_plugins.clone() {
                         let label = path.display().to_string();
@@ -34,7 +33,6 @@ impl TemplateApp {
                 });
 
                 // Save as button
-                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Save As").clicked() {
                     let some_path = rfd::FileDialog::new()
                         .add_filter("esp", &["esp"])
@@ -53,7 +51,6 @@ impl TemplateApp {
                 }
 
                 // Save as patch button
-                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Save As Patch").clicked() {
                     let some_path = rfd::FileDialog::new()
                         .add_filter("esp", &["esp"])
@@ -74,7 +71,6 @@ impl TemplateApp {
                 ui.separator();
 
                 // Quit button
-                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Quit").clicked() {
                     frame.close();
                 }
@@ -102,6 +98,7 @@ impl TemplateApp {
                 }
             }
 
+            // Open for wasm
             #[cfg(target_arch = "wasm32")]
             if ui.button("Open File").clicked() {
                 let open_pdb_data = std::rc::Rc::clone(&self.open_pdb_data);
@@ -117,7 +114,7 @@ impl TemplateApp {
                         let mut plugin = Plugin::new();
                         let data = file.read().await;
                         if plugin.load_bytes(&data).is_ok() {
-                            *open_pdb_data.borrow_mut() = Some((file.file_name(), data));
+                            *open_pdb_data.borrow_mut() = Some((file.file_name(), plugin));
                         }
                     }
                 });
@@ -158,7 +155,7 @@ impl TemplateApp {
         });
     }
 
-    fn open_plugin(
+    pub fn open_plugin(
         path_option: Option<PathBuf>,
         last_directory: &mut PathBuf,
         recent_plugins: &mut Vec<PathBuf>,
