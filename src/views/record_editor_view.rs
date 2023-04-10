@@ -8,7 +8,7 @@ use tes3::esp::TES3Object;
 pub(crate) fn record_editor_view(
     ui: &mut egui::Ui,
     //current_record: &mut TES3Object,
-    current_record_id: &mut String,
+    current_record_id: &String,
     edited_records: &mut HashMap<String, TES3Object>,
     records: &mut HashMap<String, TES3Object>,
     toasts: &mut Toasts,
