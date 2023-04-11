@@ -252,7 +252,7 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#7aacfe93dca8d25360d5ac48d7fcc95b131614d4"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#6bea692e700d916751ff08685c1e2f68763a4c3b"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -267,7 +267,7 @@ dependencies = [
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#7aacfe93dca8d25360d5ac48d7fcc95b131614d4"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#6bea692e700d916751ff08685c1e2f68763a4c3b"
 dependencies = [
  "quote",
  "syn 2.0.13",
@@ -747,7 +747,7 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#7aacfe93dca8d25360d5ac48d7fcc95b131614d4"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#6bea692e700d916751ff08685c1e2f68763a4c3b"
 dependencies = [
  "bitflags 2.1.0",
  "bstr",
@@ -766,7 +766,7 @@ dependencies = [
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#7aacfe93dca8d25360d5ac48d7fcc95b131614d4"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#6bea692e700d916751ff08685c1e2f68763a4c3b"
 dependencies = [
  "cfg-if",
  "quote",
@@ -1975,7 +1975,7 @@ dependencies = [
 [[package]]
 name = "tes3"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#7aacfe93dca8d25360d5ac48d7fcc95b131614d4"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#6bea692e700d916751ff08685c1e2f68763a4c3b"
 dependencies = [
  "esp",
 ]
