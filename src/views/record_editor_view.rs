@@ -29,6 +29,8 @@ pub(crate) fn record_editor_view(
         }
     });
 
+    ui.separator();
+
     let scroll_area = egui::ScrollArea::vertical();
     scroll_area.show(ui, |ui| {
         // get the record to edit from the original records or the edited ones

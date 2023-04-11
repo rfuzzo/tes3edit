@@ -35,6 +35,9 @@ pub struct TemplateApp {
     #[serde(skip)]
     pub current_record_id: Option<String>,
 
+    #[serde(skip)]
+    pub search_text: String,
+
     // https://github.com/ergrelet/resym/blob/e4d243eb9459211ade0c5bae16096712a0615b0b/resym/src/resym_app.rs
     /// Field used by wasm32 targets to store file information
     /// temporarily when selecting a file to open.
@@ -57,6 +60,7 @@ impl Default for TemplateApp {
             toasts: Toasts::default(),
             light_mode: false,
             current_record_id: None,
+            search_text: "".into(),
             #[cfg(target_arch = "wasm32")]
             open_pdb_data: Rc::new(RefCell::new(None)),
         }
@@ -121,6 +125,7 @@ impl TemplateApp {
                     &mut self.records,
                     &mut self.edited_records,
                     &mut self.current_record_id,
+                    &mut self.search_text,
                 );
             });
     }
