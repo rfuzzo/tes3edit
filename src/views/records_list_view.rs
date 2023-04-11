@@ -16,15 +16,21 @@ pub(crate) fn records_list_view(
 ) {
     // group by tag
     let mut tags: Vec<&str> = records.values().map(|e| e.tag_str()).collect();
+    // todo proper sorting
     tags.sort();
     tags.dedup();
 
     egui::ScrollArea::vertical().show(ui, |ui| {
+        // order by tags
         for tag in tags {
-            let records_list: Vec<_> = records.values().filter(|r| r.tag_str() == tag).collect();
+            let mut records_list: Vec<&TES3Object> =
+                records.values().filter(|r| r.tag_str() == tag).collect();
+
             // add headers and tree
             egui::CollapsingHeader::new(tag).show(ui, |ui| {
                 // add records
+                // sort
+                records_list.sort_by(|a, b| a.editor_id().cmp(&b.editor_id()));
                 for record in records_list {
                     let id = get_unique_id(record);
                     // if modified, annotate it

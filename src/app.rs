@@ -4,7 +4,9 @@ use std::{collections::HashMap, path::PathBuf};
 
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
-use tes3::esp::{Plugin, TES3Object};
+#[cfg(target_arch = "wasm32")]
+use tes3::esp::Plugin;
+use tes3::esp::TES3Object;
 
 use crate::views::record_editor_view::record_editor_view;
 use crate::views::records_list_view::records_list_view;

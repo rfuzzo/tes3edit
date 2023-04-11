@@ -179,6 +179,8 @@ impl TemplateApp {
         // clear old data
         edited_records.clear();
         records.clear();
+
+        // add new data
         for record in plugin.objects {
             records.insert(get_unique_id(&record), record);
         }
