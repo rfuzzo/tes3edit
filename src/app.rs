@@ -9,7 +9,6 @@ use tes3::esp::Plugin;
 use tes3::esp::TES3Object;
 
 use crate::views::record_editor_view::record_editor_view;
-use crate::views::records_list_view::records_list_view;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(Deserialize, Serialize)]
@@ -30,7 +29,13 @@ pub struct TemplateApp {
     pub records: HashMap<String, TES3Object>,
 
     #[serde(skip)]
+    pub sorted_records: HashMap<String, Vec<String>>,
+
+    #[serde(skip)]
     pub edited_records: HashMap<String, TES3Object>,
+
+    #[serde(skip)]
+    pub tags: Option<Vec<String>>,
 
     #[serde(skip)]
     pub current_record_id: Option<String>,
@@ -56,7 +61,9 @@ impl Default for TemplateApp {
             recent_plugins: vec![],
             last_directory: "/".into(),
             records: HashMap::default(),
+            sorted_records: HashMap::default(),
             edited_records: HashMap::default(),
+            tags: None,
             toasts: Toasts::default(),
             light_mode: false,
             current_record_id: None,
@@ -99,17 +106,6 @@ impl TemplateApp {
 
     fn update_top_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // Process keyboard shortcuts, if any
-            // self.consume_keyboard_shortcuts(ui);
-
-            // The top panel is often a good place for a menu bar
-            // menu_bar_view(
-            //     UiArgs::new(frame, ui, &mut self.toasts, &mut self.light_mode),
-            //     &mut self.records,
-            //     &mut self.edited_records,
-            //     &mut self.recent_plugins,
-            //     &mut self.last_directory,
-            // );
             self.menu_bar_view(ui, frame);
         });
     }
@@ -120,13 +116,7 @@ impl TemplateApp {
             .show(ctx, |ui| {
                 ui.heading("Records");
 
-                records_list_view(
-                    ui,
-                    &mut self.records,
-                    &mut self.edited_records,
-                    &mut self.current_record_id,
-                    &mut self.search_text,
-                );
+                self.records_list_view(ui);
             });
     }
 

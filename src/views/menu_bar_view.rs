@@ -1,8 +1,6 @@
-//#[cfg(target_arch = "wasm32")]
-//use std::{cell::RefCell, rc::Rc};
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
-use tes3::esp::{Plugin, TES3Object};
+use tes3::esp::Plugin;
 
 use crate::{get_unique_id, TemplateApp};
 
@@ -19,15 +17,9 @@ impl TemplateApp {
                         if ui.button(label).clicked() {
                             // open the plugin
                             if let Ok(plugin) = Plugin::from_path(&path) {
-                                Self::open_plugin(
-                                    Some(path.to_path_buf()),
-                                    &mut self.last_directory,
-                                    &mut self.recent_plugins,
-                                    plugin,
-                                    &mut self.edited_records,
-                                    &mut self.records,
-                                );
+                                Self::open_plugin(self, Some(path.to_path_buf()), plugin);
                             }
+                            ui.close_menu();
                         }
                     }
                 });
@@ -86,14 +78,7 @@ impl TemplateApp {
 
                 if let Some(path) = file_option {
                     if let Ok(plugin) = Plugin::from_path(&path) {
-                        Self::open_plugin(
-                            Some(path),
-                            &mut self.last_directory,
-                            &mut self.recent_plugins,
-                            plugin,
-                            &mut self.edited_records,
-                            &mut self.records,
-                        );
+                        Self::open_plugin(self, Some(path), plugin);
                     }
                 }
             }
@@ -155,34 +140,29 @@ impl TemplateApp {
         });
     }
 
-    pub fn open_plugin(
-        path_option: Option<PathBuf>,
-        last_directory: &mut PathBuf,
-        recent_plugins: &mut Vec<PathBuf>,
-        plugin: Plugin,
-        edited_records: &mut HashMap<String, TES3Object>,
-        records: &mut HashMap<String, TES3Object>,
-    ) {
+    pub fn open_plugin(&mut self, path_option: Option<PathBuf>, plugin: Plugin) {
         // save paths if on native
         if let Some(path) = path_option {
-            *last_directory = path;
+            self.last_directory = path;
 
-            if !recent_plugins.contains(last_directory) {
-                recent_plugins.push(last_directory.to_path_buf());
+            if !self.recent_plugins.contains(&self.last_directory) {
+                self.recent_plugins.push(self.last_directory.to_path_buf());
             }
-            recent_plugins.dedup();
-            if recent_plugins.len() > 10 {
-                recent_plugins.remove(0);
+            self.recent_plugins.dedup();
+            if self.recent_plugins.len() > 10 {
+                self.recent_plugins.remove(0);
             }
         }
 
         // clear old data
-        edited_records.clear();
-        records.clear();
+        self.sorted_records.clear();
+        self.tags = None;
+        self.edited_records.clear();
+        self.records.clear();
 
         // add new data
         for record in plugin.objects {
-            records.insert(get_unique_id(&record), record);
+            self.records.insert(get_unique_id(&record), record);
         }
     }
 }
