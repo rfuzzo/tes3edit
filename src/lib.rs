@@ -61,12 +61,17 @@ pub fn save_all(
     edited_records: &HashMap<String, TES3Object>,
     plugin_path: &Path,
     toasts: &mut Toasts,
+    overwrite: &bool,
 ) {
     let mut plugin = Plugin {
         objects: get_records(records, edited_records),
     };
     // save
-    let output_path = plugin_path.with_extension("new.esp");
+    let mut output_path = plugin_path.to_path_buf();
+    if !overwrite {
+        output_path = plugin_path.with_extension("new.esp");
+    }
+
     match plugin.save_path(output_path) {
         Ok(_) => {
             toasts

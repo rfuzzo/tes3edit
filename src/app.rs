@@ -32,6 +32,8 @@ pub struct TemplateApp {
     /// The last directory used in the file picker
     pub light_mode: bool,
 
+    pub overwrite: bool,
+
     // runtime
     #[serde(skip)]
     pub current_plugin_id: String,
@@ -60,6 +62,7 @@ impl Default for TemplateApp {
             recent_plugins: vec![],
             last_directory: "/".into(),
             light_mode: false,
+            overwrite: false,
             current_plugin_id: "".into(),
             plugins: HashMap::default(),
             search_text: "".into(),
@@ -200,6 +203,8 @@ impl TemplateApp {
     }
 }
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 impl eframe::App for TemplateApp {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
@@ -237,6 +242,14 @@ impl eframe::App for TemplateApp {
                     status_edited = format!("Edited Records: {}", data.edited_records.len());
                 }
                 ui.label(status_edited);
+
+                // VERSION
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
+                    ui.label(VERSION);
+                    ui.label("Version: ");
+                    ui.separator();
+                    ui.hyperlink("https://github.com/rfuzzo/tes3edit");
+                });
             });
         });
 

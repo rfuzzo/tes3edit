@@ -70,6 +70,11 @@ impl TemplateApp {
             // logic
             let mut record_ids_to_delete = vec![];
 
+            // add button // todo move?
+            // if ui.button("Add record").clicked() {
+            //     // get type and id
+            // }
+
             // the record list
             egui::ScrollArea::vertical().show(ui, |ui| {
                 // order by tags
@@ -175,7 +180,7 @@ impl TemplateApp {
     }
 }
 
-/// super dumb but I can't be bothered to mess around with enums
+/// todo super dumb but I can't be bothered to mess around with enums now
 fn get_all_tags() -> Vec<String> {
     let v = vec![
         "TES3", "GMST", "GLOB", "CLAS", "FACT", "RACE", "SOUN", "SNDG", "SKIL", "MGEF", "SCPT",

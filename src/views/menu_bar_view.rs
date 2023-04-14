@@ -44,6 +44,7 @@ impl TemplateApp {
                                 &plugin_data.edited_records,
                                 &path,
                                 &mut self.toasts,
+                                &self.overwrite,
                             );
                             self.last_directory = path;
                         }
@@ -119,19 +120,6 @@ impl TemplateApp {
             ui.separator();
 
             #[cfg(not(target_arch = "wasm32"))]
-            if ui.button("Save All").clicked() {
-                // get current plugin
-                if let Some((key, data)) = self.plugins.get_key_value(&self.current_plugin_id) {
-                    crate::save_all(
-                        &data.records,
-                        &data.edited_records,
-                        Path::new(key),
-                        &mut self.toasts,
-                    );
-                }
-            }
-
-            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save Patch").clicked() {
                 if let Some((key, data)) = self.plugins.get_key_value(&self.current_plugin_id) {
                     crate::save_patch(
@@ -142,6 +130,23 @@ impl TemplateApp {
                     );
                 }
             }
+
+            #[cfg(not(target_arch = "wasm32"))]
+            if ui.button("Save All").clicked() {
+                // get current plugin
+                if let Some((key, data)) = self.plugins.get_key_value(&self.current_plugin_id) {
+                    crate::save_all(
+                        &data.records,
+                        &data.edited_records,
+                        Path::new(key),
+                        &mut self.toasts,
+                        &self.overwrite,
+                    );
+                }
+            }
+
+            #[cfg(not(target_arch = "wasm32"))]
+            ui.checkbox(&mut self.overwrite, "Overwrite");
 
             // theme button on right
             ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
