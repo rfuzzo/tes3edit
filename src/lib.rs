@@ -66,7 +66,7 @@ pub fn save_all(
         objects: get_records(records, edited_records),
     };
     // save
-    let output_path = append_ext("dbg.esp", plugin_path.to_path_buf());
+    let output_path = plugin_path.with_extension("new.esp");
     match plugin.save_path(output_path) {
         Ok(_) => {
             toasts
@@ -101,7 +101,8 @@ pub fn save_patch(
     let mut plugin = Plugin {
         objects: records_vec,
     };
-    let output_path = append_ext("patch.esp", plugin_path.to_path_buf());
+
+    let output_path = plugin_path.with_extension("patch.esp");
     match plugin.save_path(output_path) {
         Ok(_) => {
             toasts

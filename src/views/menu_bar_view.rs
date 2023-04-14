@@ -120,31 +120,26 @@ impl TemplateApp {
 
             #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save All").clicked() {
-                if let Some(plugin_path) = self.recent_plugins.last() {
-                    // get current plugin
-                    if let Some(plugin_data) = self.plugins.get(&self.current_plugin_id) {
-                        crate::save_all(
-                            &plugin_data.records,
-                            &plugin_data.edited_records,
-                            plugin_path,
-                            &mut self.toasts,
-                        );
-                    }
+                // get current plugin
+                if let Some((key, data)) = self.plugins.get_key_value(&self.current_plugin_id) {
+                    crate::save_all(
+                        &data.records,
+                        &data.edited_records,
+                        Path::new(key),
+                        &mut self.toasts,
+                    );
                 }
             }
 
             #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save Patch").clicked() {
-                if let Some(plugin_path) = self.recent_plugins.last() {
-                    // get current plugin
-                    if let Some(plugin_data) = self.plugins.get(&self.current_plugin_id) {
-                        crate::save_patch(
-                            &plugin_data.records,
-                            &plugin_data.edited_records,
-                            plugin_path,
-                            &mut self.toasts,
-                        );
-                    }
+                if let Some((key, data)) = self.plugins.get_key_value(&self.current_plugin_id) {
+                    crate::save_patch(
+                        &data.records,
+                        &data.edited_records,
+                        Path::new(key),
+                        &mut self.toasts,
+                    );
                 }
             }
 
