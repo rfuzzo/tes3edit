@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 use tes3::esp::Plugin;
 
@@ -157,19 +157,34 @@ impl TemplateApp {
         });
     }
 
+    fn get_plugin_names(map: &HashMap<String, crate::app::PluginMetadata>) -> Vec<String> {
+        let mut plugins_sorted: Vec<String> = map.iter().map(|kvp| kvp.0.clone()).collect();
+        plugins_sorted.sort();
+
+        plugins_sorted
+    }
+
     pub fn breadcrumb(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::ScrollArea::horizontal().show(ui, |ui| {
-            let mut plugins_sorted: Vec<&String> = self.plugins.keys().collect();
-            plugins_sorted.sort();
-
             ui.horizontal(|ui| {
+                let plugins_sorted = Self::get_plugin_names(&self.plugins);
+
                 for key in plugins_sorted {
-                    let path = Path::new(key);
+                    let path = Path::new(&key);
                     let name = path.file_name().unwrap().to_str().unwrap().to_string();
-                    if ui.button(name).clicked() {
+                    let r = ui.button(name);
+                    if r.clicked() {
                         // open Plugin
                         self.current_plugin_id = key.clone();
                     }
+                    r.context_menu(|ui| {
+                        if ui.button("Close").clicked() {
+                            // remove the plugin
+                            self.current_plugin_id = "".into();
+                            self.plugins.remove(&key);
+                            ui.close_menu();
+                        }
+                    });
                 }
             });
         });
