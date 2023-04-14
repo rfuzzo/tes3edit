@@ -165,8 +165,12 @@ impl TemplateApp {
                 let plugins_sorted = Self::get_plugin_names(&self.plugins);
 
                 for key in plugins_sorted {
-                    let path = Path::new(&key);
-                    let name = path.file_name().unwrap().to_str().unwrap().to_string();
+                    let name = Path::new(&key)
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap()
+                        .to_string();
                     let r = ui.button(name);
                     if r.clicked() {
                         // open Plugin

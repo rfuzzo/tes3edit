@@ -112,8 +112,6 @@ impl TemplateApp {
         egui::SidePanel::left("side_panel")
             .min_width(250_f32)
             .show(ctx, |ui| {
-                ui.heading("Records");
-
                 self.records_list_view(ui);
             });
     }
@@ -190,6 +188,19 @@ impl eframe::App for TemplateApp {
 
         // Top Panel
         self.update_top_panel(ctx, frame);
+
+        // bottom Panel
+        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            // Status Bar
+            ui.horizontal(|ui| {
+                // Number of edited records
+                let mut status_edited = "Edited Records: ".to_owned();
+                if let Some(data) = self.plugins.get_mut(&self.current_plugin_id) {
+                    status_edited = format!("Edited Records: {}", data.edited_records.len());
+                }
+                ui.label(status_edited);
+            });
+        });
 
         // Side Panel
         self.update_left_side_panel(ctx);

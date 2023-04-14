@@ -6,6 +6,19 @@ use crate::{get_unique_id, TemplateApp};
 
 impl TemplateApp {
     pub fn records_list_view(&mut self, ui: &mut egui::Ui) {
+        // heading
+        if let Some(kvp) = self.plugins.get_key_value(&self.current_plugin_id) {
+            let name = std::path::Path::new(&kvp.0)
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+            ui.heading(name);
+        } else {
+            ui.heading("Records");
+        }
+
         // search bar
         let _search_text = self.search_text.clone();
         ui.horizontal(|ui| {
@@ -115,7 +128,7 @@ impl TemplateApp {
                                 for (key, edited_record) in data.edited_records.clone() {
                                     if let Some(original) = data.records.get(&key) {
                                         // remove if no change
-                                        if original.eq(&edited_record) && id != key {
+                                        if original.eq(&edited_record) {
                                             to_remove.push(key);
                                         }
                                     }
