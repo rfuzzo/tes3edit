@@ -252,13 +252,14 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#2c49c046181f74c286f9872e7b1bf04f76b8893c"
 dependencies = [
  "bstr",
  "bytemuck",
  "bytes_io_macros",
  "copyless",
  "encoding_rs",
- "hashbrown 0.12.3",
+ "hashbrown",
  "memchr",
  "smart-default",
 ]
@@ -266,6 +267,7 @@ dependencies = [
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#2c49c046181f74c286f9872e7b1bf04f76b8893c"
 dependencies = [
  "quote",
  "syn 2.0.14",
@@ -745,6 +747,7 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#2c49c046181f74c286f9872e7b1bf04f76b8893c"
 dependencies = [
  "bitflags 2.1.0",
  "bstr",
@@ -754,7 +757,7 @@ dependencies = [
  "derive_more",
  "egui",
  "esp_macros",
- "hashbrown 0.13.2",
+ "hashbrown",
  "itoa",
  "rayon",
  "smart-default",
@@ -763,8 +766,8 @@ dependencies = [
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#2c49c046181f74c286f9872e7b1bf04f76b8893c"
 dependencies = [
- "cfg-if",
  "quote",
  "syn 2.0.14",
 ]
@@ -1072,16 +1075,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 dependencies = [
  "ahash 0.7.6",
- "serde",
-]
-
-[[package]]
-name = "hashbrown"
-version = "0.13.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
-dependencies = [
- "ahash 0.8.3",
+ "rayon",
 ]
 
 [[package]]
@@ -1122,7 +1116,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
- "hashbrown 0.12.3",
+ "hashbrown",
 ]
 
 [[package]]
@@ -1971,6 +1965,7 @@ dependencies = [
 [[package]]
 name = "tes3"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#2c49c046181f74c286f9872e7b1bf04f76b8893c"
 dependencies = [
  "esp",
 ]
