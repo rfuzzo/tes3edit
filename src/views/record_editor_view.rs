@@ -1,49 +1,47 @@
-use std::collections::HashMap;
+use tes3::esp::editor::Editor;
 
-use egui_notify::Toasts;
+use crate::TemplateApp;
 
-use tes3::esp::traits::editor::Editor;
-use tes3::esp::TES3Object;
+impl TemplateApp {
+    pub fn record_editor_view(&mut self, ui: &mut egui::Ui) {
+        // editor for a specific plugin
+        if let Some(plugin_data) = self.plugins.get_mut(&self.current_plugin_id) {
+            // a plugin was found
+            if let Some(current_record_id) = &plugin_data.current_record_id {
+                // editor menu bar
+                egui::menu::bar(ui, |ui| {
+                    // Revert record button
+                    if ui.button("Revert").clicked() {
+                        // get original record
+                        if plugin_data.edited_records.contains_key(current_record_id) {
+                            // remove from edited records
+                            plugin_data.edited_records.remove(current_record_id);
 
-pub(crate) fn record_editor_view(
-    ui: &mut egui::Ui,
-    //current_record: &mut TES3Object,
-    current_record_id: &String,
-    edited_records: &mut HashMap<String, TES3Object>,
-    records: &mut HashMap<String, TES3Object>,
-    toasts: &mut Toasts,
-) {
-    // editor menu bar
-    egui::menu::bar(ui, |ui| {
-        // Revert record button
-        if ui.button("Revert").clicked() {
-            // get original record
-            if edited_records.contains_key(current_record_id) {
-                // remove from edited records
-                edited_records.remove(current_record_id);
+                            self.toasts
+                                .info("Record reverted")
+                                .set_duration(Some(std::time::Duration::from_secs(5)));
+                        }
+                    }
+                });
+                ui.separator();
 
-                toasts
-                    .info("Record reverted")
-                    .set_duration(Some(std::time::Duration::from_secs(5)));
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    // get the record to edit from the original records or the edited ones
+                    if plugin_data.edited_records.contains_key(current_record_id) {
+                        plugin_data
+                            .edited_records
+                            .get_mut(current_record_id)
+                            .unwrap()
+                            .add_editor(ui, None);
+                    } else {
+                        plugin_data
+                            .records
+                            .get_mut(current_record_id)
+                            .unwrap()
+                            .add_editor(ui, None);
+                    }
+                });
             }
         }
-    });
-
-    ui.separator();
-
-    let scroll_area = egui::ScrollArea::vertical();
-    scroll_area.show(ui, |ui| {
-        // get the record to edit from the original records or the edited ones
-        if edited_records.contains_key(current_record_id) {
-            edited_records
-                .get_mut(current_record_id)
-                .unwrap()
-                .add_editor(ui, None);
-        } else {
-            records
-                .get_mut(current_record_id)
-                .unwrap()
-                .add_editor(ui, None);
-        }
-    });
+    }
 }

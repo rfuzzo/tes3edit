@@ -35,8 +35,8 @@ pub fn get_unique_id(record: &TES3Object) -> String {
 // App
 
 pub fn get_records(
-    records: &mut HashMap<String, TES3Object>,
-    edited_records: &mut HashMap<String, TES3Object>,
+    records: &HashMap<String, TES3Object>,
+    edited_records: &HashMap<String, TES3Object>,
 ) -> Vec<TES3Object> {
     // construct records from both lists
     let mut final_records = records.clone();
@@ -57,8 +57,8 @@ pub fn get_records(
 }
 
 pub fn save_all(
-    records: &mut HashMap<String, TES3Object>,
-    edited_records: &mut HashMap<String, TES3Object>,
+    records: &HashMap<String, TES3Object>,
+    edited_records: &HashMap<String, TES3Object>,
     plugin_path: &Path,
     toasts: &mut Toasts,
 ) {
@@ -82,8 +82,8 @@ pub fn save_all(
 }
 
 pub fn save_patch(
-    records: &mut HashMap<String, TES3Object>,
-    edited_records: &mut HashMap<String, TES3Object>,
+    records: &HashMap<String, TES3Object>,
+    edited_records: &HashMap<String, TES3Object>,
     plugin_path: &Path,
     toasts: &mut Toasts,
 ) {

@@ -6,9 +6,17 @@ use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 #[cfg(target_arch = "wasm32")]
 use tes3::esp::Plugin;
-use tes3::esp::TES3Object;
+use tes3::esp::{Plugin, TES3Object};
 
-use crate::views::record_editor_view::record_editor_view;
+use crate::get_unique_id;
+
+#[derive(Default)]
+pub struct PluginMetadata {
+    pub records: HashMap<String, TES3Object>,
+    pub sorted_records: HashMap<String, Vec<String>>,
+    pub edited_records: HashMap<String, TES3Object>,
+    pub current_record_id: Option<String>,
+}
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(Deserialize, Serialize)]
@@ -26,22 +34,17 @@ pub struct TemplateApp {
 
     // runtime
     #[serde(skip)]
-    pub records: HashMap<String, TES3Object>,
+    pub current_plugin_id: String,
 
     #[serde(skip)]
-    pub sorted_records: HashMap<String, Vec<String>>,
-
-    #[serde(skip)]
-    pub edited_records: HashMap<String, TES3Object>,
-
-    #[serde(skip)]
-    pub tags: Option<Vec<String>>,
-
-    #[serde(skip)]
-    pub current_record_id: Option<String>,
+    pub plugins: HashMap<String, PluginMetadata>,
 
     #[serde(skip)]
     pub search_text: String,
+
+    // ui
+    #[serde(skip)]
+    pub toasts: Toasts,
 
     // https://github.com/ergrelet/resym/blob/e4d243eb9459211ade0c5bae16096712a0615b0b/resym/src/resym_app.rs
     /// Field used by wasm32 targets to store file information
@@ -49,10 +52,6 @@ pub struct TemplateApp {
     #[cfg(target_arch = "wasm32")]
     #[serde(skip)]
     pub open_pdb_data: Rc<RefCell<Option<(String, Plugin)>>>,
-
-    // ui
-    #[serde(skip)]
-    pub toasts: Toasts,
 }
 
 impl Default for TemplateApp {
@@ -60,14 +59,11 @@ impl Default for TemplateApp {
         Self {
             recent_plugins: vec![],
             last_directory: "/".into(),
-            records: HashMap::default(),
-            sorted_records: HashMap::default(),
-            edited_records: HashMap::default(),
-            tags: None,
-            toasts: Toasts::default(),
             light_mode: false,
-            current_record_id: None,
+            current_plugin_id: "".into(),
+            plugins: HashMap::default(),
             search_text: "".into(),
+            toasts: Toasts::default(),
             #[cfg(target_arch = "wasm32")]
             open_pdb_data: Rc::new(RefCell::new(None)),
         }
@@ -107,6 +103,8 @@ impl TemplateApp {
     fn update_top_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             self.menu_bar_view(ui, frame);
+
+            self.breadcrumb(ui, frame);
         });
     }
 
@@ -122,16 +120,50 @@ impl TemplateApp {
 
     fn update_central_panel(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            if let Some(record_id) = self.current_record_id.clone() {
-                record_editor_view(
-                    ui,
-                    &record_id,
-                    &mut self.edited_records,
-                    &mut self.records,
-                    &mut self.toasts,
-                );
-            }
+            self.record_editor_view(ui);
         });
+    }
+
+    /// Open a new plugin
+    ///
+    /// # Panics
+    ///
+    /// Panics if .
+    pub fn open_plugin(&mut self, path_option: Option<PathBuf>, plugin: Plugin) {
+        // save paths if on native
+        if let Some(path) = path_option {
+            self.last_directory = path.clone();
+
+            if !self.recent_plugins.contains(&self.last_directory) {
+                self.recent_plugins.push(self.last_directory.to_path_buf());
+            }
+            self.recent_plugins.dedup();
+            if self.recent_plugins.len() > 10 {
+                self.recent_plugins.remove(0);
+            }
+
+            // if the plugin already is opened, replace
+            self.current_plugin_id = path.to_str().unwrap().to_string();
+            if let Some(plugin_data) = self.plugins.get_mut(&self.current_plugin_id) {
+                // clear old data
+                plugin_data.sorted_records.clear();
+                plugin_data.edited_records.clear();
+                plugin_data.records.clear();
+
+                // add new data
+                for record in plugin.objects {
+                    plugin_data.records.insert(get_unique_id(&record), record);
+                }
+            } else {
+                // insert new
+                let mut data = PluginMetadata::default();
+                // add new data
+                for record in plugin.objects {
+                    data.records.insert(get_unique_id(&record), record);
+                }
+                self.plugins.insert(self.current_plugin_id.clone(), data);
+            }
+        }
     }
 }
 
@@ -149,6 +181,9 @@ impl eframe::App for TemplateApp {
         if self.light_mode && ctx.style().visuals.dark_mode {
             ctx.set_visuals(egui::Visuals::light());
         }
+
+        // some cleanup
+        self.recent_plugins.dedup();
 
         #[cfg(target_arch = "wasm32")]
         self.process_open_pdb_file_result();

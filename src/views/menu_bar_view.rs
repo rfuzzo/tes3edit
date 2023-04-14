@@ -1,8 +1,8 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use tes3::esp::Plugin;
 
-use crate::{get_unique_id, TemplateApp};
+use crate::TemplateApp;
 
 impl TemplateApp {
     pub fn menu_bar_view(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
@@ -11,15 +11,20 @@ impl TemplateApp {
             // File Menu
             #[cfg(not(target_arch = "wasm32"))]
             ui.menu_button("File", |ui| {
-                ui.menu_button("Recently Opened", |ui| {
-                    for path in self.recent_plugins.clone() {
+                ui.menu_button("Opened Recent", |ui| {
+                    for (i, path) in self.recent_plugins.clone().iter().enumerate() {
                         let label = path.display().to_string();
                         if ui.button(label).clicked() {
-                            // open the plugin
-                            if let Ok(plugin) = Plugin::from_path(&path) {
-                                Self::open_plugin(self, Some(path.to_path_buf()), plugin);
+                            // check if file exists
+                            if !path.exists() {
+                                self.recent_plugins.remove(i);
+                            } else {
+                                // open the plugin
+                                if let Ok(plugin) = Plugin::from_path(path) {
+                                    Self::open_plugin(self, Some(path.to_path_buf()), plugin);
+                                }
+                                ui.close_menu();
                             }
-                            ui.close_menu();
                         }
                     }
                 });
@@ -32,13 +37,16 @@ impl TemplateApp {
                         .save_file();
 
                     if let Some(path) = some_path {
-                        crate::save_all(
-                            &mut self.records,
-                            &mut self.edited_records,
-                            &path,
-                            &mut self.toasts,
-                        );
-                        self.last_directory = path;
+                        // get current plugin
+                        if let Some(plugin_data) = self.plugins.get(&self.current_plugin_id) {
+                            crate::save_all(
+                                &plugin_data.records,
+                                &plugin_data.edited_records,
+                                &path,
+                                &mut self.toasts,
+                            );
+                            self.last_directory = path;
+                        }
                     }
                 }
 
@@ -50,13 +58,16 @@ impl TemplateApp {
                         .save_file();
 
                     if let Some(path) = some_path {
-                        crate::save_patch(
-                            &mut self.records,
-                            &mut self.edited_records,
-                            &path,
-                            &mut self.toasts,
-                        );
-                        self.last_directory = path;
+                        // get current plugin
+                        if let Some(plugin_data) = self.plugins.get(&self.current_plugin_id) {
+                            crate::save_patch(
+                                &plugin_data.records,
+                                &plugin_data.edited_records,
+                                &path,
+                                &mut self.toasts,
+                            );
+                            self.last_directory = path;
+                        }
                     }
                 }
 
@@ -110,24 +121,30 @@ impl TemplateApp {
             #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save All").clicked() {
                 if let Some(plugin_path) = self.recent_plugins.last() {
-                    crate::save_all(
-                        &mut self.records,
-                        &mut self.edited_records,
-                        plugin_path,
-                        &mut self.toasts,
-                    );
+                    // get current plugin
+                    if let Some(plugin_data) = self.plugins.get(&self.current_plugin_id) {
+                        crate::save_all(
+                            &plugin_data.records,
+                            &plugin_data.edited_records,
+                            plugin_path,
+                            &mut self.toasts,
+                        );
+                    }
                 }
             }
 
             #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save Patch").clicked() {
                 if let Some(plugin_path) = self.recent_plugins.last() {
-                    crate::save_patch(
-                        &mut self.records,
-                        &mut self.edited_records,
-                        plugin_path,
-                        &mut self.toasts,
-                    );
+                    // get current plugin
+                    if let Some(plugin_data) = self.plugins.get(&self.current_plugin_id) {
+                        crate::save_patch(
+                            &plugin_data.records,
+                            &plugin_data.edited_records,
+                            plugin_path,
+                            &mut self.toasts,
+                        );
+                    }
                 }
             }
 
@@ -140,32 +157,25 @@ impl TemplateApp {
         });
     }
 
-    pub fn open_plugin(&mut self, path_option: Option<PathBuf>, plugin: Plugin) {
-        // save paths if on native
-        if let Some(path) = path_option {
-            self.last_directory = path;
+    pub fn breadcrumb(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::ScrollArea::horizontal().show(ui, |ui| {
+            let mut plugins_sorted: Vec<&String> = self.plugins.keys().collect();
+            plugins_sorted.sort();
 
-            if !self.recent_plugins.contains(&self.last_directory) {
-                self.recent_plugins.push(self.last_directory.to_path_buf());
-            }
-            self.recent_plugins.dedup();
-            if self.recent_plugins.len() > 10 {
-                self.recent_plugins.remove(0);
-            }
-        }
-
-        // clear old data
-        self.sorted_records.clear();
-        self.tags = None;
-        self.edited_records.clear();
-        self.records.clear();
-
-        // add new data
-        for record in plugin.objects {
-            self.records.insert(get_unique_id(&record), record);
-        }
+            ui.horizontal(|ui| {
+                for key in plugins_sorted {
+                    let path = Path::new(key);
+                    let name = path.file_name().unwrap().to_str().unwrap().to_string();
+                    if ui.button(name).clicked() {
+                        // open Plugin
+                        self.current_plugin_id = key.clone();
+                    }
+                }
+            });
+        });
     }
 }
+
 // taken from egui
 fn global_dark_light_mode_switch(ui: &mut egui::Ui, light_mode: &mut bool) {
     let style: egui::Style = (*ui.ctx().style()).clone();
