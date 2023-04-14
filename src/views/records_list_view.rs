@@ -31,7 +31,6 @@ impl TemplateApp {
         // editor for a specific plugin
         if let Some(data) = self.plugins.get_mut(&self.current_plugin_id) {
             // a plugin was found
-            //if let Some(_current_record_id) = &data.current_record_id {
             if (_search_text != self.search_text) || data.sorted_records.is_empty() {
                 // regenerate records
                 let mut filtered_records_by_tag: HashMap<String, Vec<String>> = HashMap::default();
@@ -69,7 +68,7 @@ impl TemplateApp {
             }
 
             // logic
-            let mut records_to_delete = vec![];
+            let mut record_ids_to_delete = vec![];
 
             // the record list
             egui::ScrollArea::vertical().show(ui, |ui| {
@@ -77,7 +76,7 @@ impl TemplateApp {
                 for tag in tags {
                     let records_of_tag: Vec<&TES3Object> = data.sorted_records[&tag]
                         .iter()
-                        .map(|e| data.records.get(e).unwrap())
+                        .filter_map(|e| data.records.get(e))
                         .collect();
 
                     if records_of_tag.is_empty() {
@@ -89,8 +88,8 @@ impl TemplateApp {
                         // add records
                         // sort
 
-                        for recordt in records_of_tag.iter() {
-                            let record = *recordt;
+                        for record_ptr in records_of_tag.iter() {
+                            let record = *record_ptr;
                             let id = get_unique_id(record);
 
                             // annotations
@@ -114,9 +113,7 @@ impl TemplateApp {
                             response.clone().context_menu(|ui| {
                                 if ui.button("Delete").clicked() {
                                     // delete a record
-                                    if !records_to_delete.contains(&id) {
-                                        records_to_delete.push(id.clone());
-                                    }
+                                    record_ids_to_delete.push(id.clone());
                                     ui.close_menu();
                                 }
                             });
@@ -159,9 +156,7 @@ impl TemplateApp {
                         if ui.button("Delete all").clicked() {
                             for r in records_of_tag.iter() {
                                 let id = get_unique_id(r);
-                                if !records_to_delete.contains(&id) {
-                                    records_to_delete.push(id.clone());
-                                }
+                                record_ids_to_delete.push(id.clone());
                             }
                             ui.close_menu();
                         }
@@ -172,10 +167,10 @@ impl TemplateApp {
             });
 
             // delete stuff
-            for k in records_to_delete {
+            record_ids_to_delete.dedup();
+            for k in record_ids_to_delete {
                 data.records.remove(&k);
             }
-            //}
         }
     }
 }
