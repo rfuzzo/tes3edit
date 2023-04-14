@@ -163,6 +163,41 @@ impl TemplateApp {
             }
         }
     }
+
+    // https://github.com/EmbarkStudios/puffin/blob/dafc2ff1755e5ed85c405f7240603f1af6c71c24/puffin_viewer/src/lib.rs#L239
+    fn ui_file_drag_and_drop(&mut self, ctx: &egui::Context) {
+        use egui::*;
+
+        // Preview hovering files:
+        if !ctx.input(|i| i.raw.hovered_files.is_empty()) {
+            let painter =
+                ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("file_drop_target")));
+
+            let screen_rect = ctx.input(|i| i.screen_rect());
+            painter.rect_filled(screen_rect, 0.0, Color32::from_black_alpha(192));
+            painter.text(
+                screen_rect.center(),
+                Align2::CENTER_CENTER,
+                "Drop to open plugin",
+                TextStyle::Heading.resolve(&ctx.style()),
+                Color32::WHITE,
+            );
+        }
+
+        // Collect dropped files:
+        ctx.input(|i| {
+            if !i.raw.dropped_files.is_empty() {
+                for file in i.raw.dropped_files.iter() {
+                    if let Some(path) = &file.path {
+                        if let Ok(plugin) = Plugin::from_path(path) {
+                            Self::open_plugin(self, Some(path.to_path_buf()), plugin);
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+    }
 }
 
 impl eframe::App for TemplateApp {
@@ -175,6 +210,9 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        // drag and drop
+        self.ui_file_drag_and_drop(ctx);
+
         // if light mode is requested but the app is in dark mode, we enable light mode
         if self.light_mode && ctx.style().visuals.dark_mode {
             ctx.set_visuals(egui::Visuals::light());
