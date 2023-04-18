@@ -5,6 +5,7 @@ use tes3::esp::Plugin;
 use crate::TemplateApp;
 
 impl TemplateApp {
+    #[allow(unused_variables)] // for wasm
     pub fn menu_bar_view(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         // Menu Bar
         egui::menu::bar(ui, |ui| {
@@ -33,6 +34,7 @@ impl TemplateApp {
                 if ui.button("Save As").clicked() {
                     let some_path = rfd::FileDialog::new()
                         .add_filter("esp", &["esp"])
+                        .add_filter("esm", &["esm"])
                         .set_directory(&self.last_directory)
                         .save_file();
 
@@ -55,6 +57,7 @@ impl TemplateApp {
                 if ui.button("Save As Patch").clicked() {
                     let some_path = rfd::FileDialog::new()
                         .add_filter("esp", &["esp"])
+                        .add_filter("esm", &["esm"])
                         .set_directory(&self.last_directory)
                         .save_file();
 
@@ -85,6 +88,7 @@ impl TemplateApp {
             if ui.button("Open File").clicked() {
                 let file_option = rfd::FileDialog::new()
                     .add_filter("esp", &["esp"])
+                    .add_filter("esm", &["esm"])
                     .set_directory(&self.last_directory)
                     .pick_file();
 
@@ -104,6 +108,7 @@ impl TemplateApp {
                 wasm_bindgen_futures::spawn_local(async move {
                     let file_opt = rfd::AsyncFileDialog::new()
                         .add_filter("esp", &["esp"])
+                        .add_filter("esm", &["esm"])
                         .set_directory(start_directory)
                         .pick_file()
                         .await;
@@ -115,6 +120,15 @@ impl TemplateApp {
                         }
                     }
                 });
+            }
+
+            // Save for wasm
+            #[cfg(target_arch = "wasm32")]
+            if ui.button("Save As").clicked() {
+                // let mut dialog =
+                //     egui_file::FileDialog::save_file(Some(std::path::PathBuf::from("/")));
+                // dialog.open();
+                // self.save_file_dialog = Some(dialog);
             }
 
             ui.separator();
