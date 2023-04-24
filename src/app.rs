@@ -9,6 +9,7 @@ use tes3::esp::Plugin;
 use tes3::esp::TES3Object;
 
 use crate::get_unique_id;
+use crate::EScale;
 
 #[derive(Default)]
 pub struct PluginMetadata {
@@ -31,6 +32,7 @@ pub struct TemplateApp {
 
     /// The last directory used in the file picker
     pub light_mode: bool,
+    pub scale: EScale,
 
     pub overwrite: bool,
 
@@ -65,6 +67,7 @@ impl Default for TemplateApp {
             recent_plugins: vec![],
             last_directory: "/".into(),
             light_mode: false,
+            scale: EScale::Small,
             overwrite: false,
             current_plugin_id: "".into(),
             plugins: HashMap::default(),
@@ -83,6 +86,7 @@ impl TemplateApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
+        //cc.egui_ctx.set_pixels_per_point(2.0_f32);
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
@@ -233,6 +237,8 @@ impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // drag and drop
         self.ui_file_drag_and_drop(ctx);
+
+        ctx.set_pixels_per_point(f32::from(self.scale));
 
         // if light mode is requested but the app is in dark mode, we enable light mode
         if self.light_mode && ctx.style().visuals.dark_mode {

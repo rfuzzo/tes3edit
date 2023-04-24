@@ -11,7 +11,24 @@ use egui_notify::Toasts;
 
 mod app;
 mod views;
+use serde::{Deserialize, Serialize};
 use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum EScale {
+    Small,
+    Medium,
+    Large,
+}
+impl From<EScale> for f32 {
+    fn from(val: EScale) -> Self {
+        match val {
+            EScale::Small => 2.0,
+            EScale::Medium => 3.0,
+            EScale::Large => 4.0,
+        }
+    }
+}
 
 //////////////////////////////////////////
 // Common

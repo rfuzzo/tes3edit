@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path};
 
 use tes3::esp::Plugin;
 
-use crate::TemplateApp;
+use crate::{EScale, TemplateApp};
 
 impl TemplateApp {
     #[allow(unused_variables)] // for wasm
@@ -165,8 +165,17 @@ impl TemplateApp {
             // theme button on right
             ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
                 global_dark_light_mode_switch(ui, &mut self.light_mode);
+
                 ui.label("Theme: ");
                 egui::warn_if_debug_build(ui);
+
+                egui::ComboBox::from_label("Scale!")
+                    .selected_text(format!("{:?}", self.scale))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut self.scale, EScale::Small, "Small");
+                        ui.selectable_value(&mut self.scale, EScale::Medium, "Medium");
+                        ui.selectable_value(&mut self.scale, EScale::Large, "Large");
+                    });
             });
         });
     }
