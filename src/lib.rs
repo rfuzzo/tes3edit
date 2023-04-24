@@ -25,7 +25,7 @@ impl From<EScale> for f32 {
         match val {
             EScale::Small => 2.0,
             EScale::Medium => 3.0,
-            EScale::Large => 4.0,
+            EScale::Large => 4.5,
         }
     }
 }

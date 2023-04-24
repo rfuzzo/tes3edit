@@ -241,7 +241,7 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#4e4695a48620e6573fec2e37a4d71731e1a2972c"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#f0da5d1f2f16f9831a7a9aa575f483c21fdbb47f"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -250,13 +250,13 @@ dependencies = [
  "encoding_rs",
  "hashbrown 0.13.2",
  "memchr",
- "smart-default",
+ "smart-default 0.6.0",
 ]
 
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#4e4695a48620e6573fec2e37a4d71731e1a2972c"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#f0da5d1f2f16f9831a7a9aa575f483c21fdbb47f"
 dependencies = [
  "quote",
  "syn 2.0.15",
@@ -737,7 +737,7 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#4e4695a48620e6573fec2e37a4d71731e1a2972c"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#f0da5d1f2f16f9831a7a9aa575f483c21fdbb47f"
 dependencies = [
  "bitflags 2.2.1",
  "bstr",
@@ -745,18 +745,19 @@ dependencies = [
  "bytes_io",
  "cow-utils",
  "derive_more",
+ "ecolor",
  "egui",
  "esp_macros",
  "hashbrown 0.13.2",
  "itoa",
  "rayon",
- "smart-default",
+ "smart-default 0.7.1",
 ]
 
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#4e4695a48620e6573fec2e37a4d71731e1a2972c"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#f0da5d1f2f16f9831a7a9aa575f483c21fdbb47f"
 dependencies = [
  "quote",
  "syn 2.0.15",
@@ -1873,6 +1874,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "smart-default"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0eb01866308440fc64d6c44d9e86c5cc17adfe33c4d6eed55da9145044d0ffc1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.15",
+]
+
+[[package]]
 name = "smithay-client-toolkit"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1967,7 +1979,7 @@ checksum = "8ae9980cab1db3fceee2f6c6f643d5d8de2997c58ee8d25fb0cc8a9e9e7348e5"
 [[package]]
 name = "tes3"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#4e4695a48620e6573fec2e37a4d71731e1a2972c"
+source = "git+https://github.com/rfuzzo/tes3?branch=remove-zstd#f0da5d1f2f16f9831a7a9aa575f483c21fdbb47f"
 dependencies = [
  "esp",
 ]

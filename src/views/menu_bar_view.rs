@@ -169,7 +169,7 @@ impl TemplateApp {
                 ui.label("Theme: ");
                 egui::warn_if_debug_build(ui);
 
-                egui::ComboBox::from_label("Scale!")
+                egui::ComboBox::from_label("Scale: ")
                     .selected_text(format!("{:?}", self.scale))
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut self.scale, EScale::Small, "Small");
