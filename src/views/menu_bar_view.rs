@@ -102,7 +102,7 @@ impl TemplateApp {
             // Open for wasm
             #[cfg(target_arch = "wasm32")]
             if ui.button("Open File").clicked() {
-                let open_pdb_data = std::rc::Rc::clone(&self.open_pdb_data);
+                let open_data = std::rc::Rc::clone(&self.open_file_data);
                 let start_directory = self.last_directory.clone();
                 // async
                 wasm_bindgen_futures::spawn_local(async move {
@@ -116,7 +116,7 @@ impl TemplateApp {
                         let mut plugin = Plugin::new();
                         let data = file.read().await;
                         if plugin.load_bytes(&data).is_ok() {
-                            *open_pdb_data.borrow_mut() = Some((file.file_name(), plugin));
+                            *open_data.borrow_mut() = Some((file.file_name(), plugin));
                         }
                     }
                 });
@@ -125,10 +125,22 @@ impl TemplateApp {
             // Save for wasm
             #[cfg(target_arch = "wasm32")]
             if ui.button("Save As").clicked() {
-                // let mut dialog =
-                //     egui_file::FileDialog::save_file(Some(std::path::PathBuf::from("/")));
-                // dialog.open();
-                // self.save_file_dialog = Some(dialog);
+                let save_data = std::rc::Rc::clone(&self.save_file_data);
+                let start_directory = self.last_directory.clone();
+                // async
+                wasm_bindgen_futures::spawn_local(async move {
+                    let file_opt = rfd::AsyncFileDialog::new()
+                        .add_filter("esp", &["esp"])
+                        .add_filter("esm", &["esm"])
+                        .set_directory(start_directory)
+                        .pick_file()
+                        .await;
+                    if let Some(file) = file_opt {
+                        
+
+                        *save_data.borrow_mut() = Some(file.file_name());
+                    }
+                });
             }
 
             ui.separator();

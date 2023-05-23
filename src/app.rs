@@ -3,7 +3,6 @@ use std::{cell::RefCell, rc::Rc};
 use std::{collections::HashMap, path::PathBuf};
 
 use egui_notify::Toasts;
-use serde::{Deserialize, Serialize};
 
 use tes3::esp::Plugin;
 use tes3::esp::TES3Object;
@@ -20,7 +19,7 @@ pub struct PluginMetadata {
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(Deserialize, Serialize)]
+#[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
     // serialized data
@@ -55,10 +54,11 @@ pub struct TemplateApp {
     /// temporarily when selecting a file to open.
     #[cfg(target_arch = "wasm32")]
     #[serde(skip)]
-    pub open_pdb_data: Rc<RefCell<Option<(String, Plugin)>>>,
-    // #[cfg(target_arch = "wasm32")]
-    // #[serde(skip)]
-    // pub save_file_dialog: Option<egui_file::FileDialog>,
+    pub open_file_data: Rc<RefCell<Option<(String, Plugin)>>>,
+
+    #[cfg(target_arch = "wasm32")]
+    #[serde(skip)]
+    pub save_file_data: Rc<RefCell<Option<String>>>,
 }
 
 impl Default for TemplateApp {
@@ -74,9 +74,9 @@ impl Default for TemplateApp {
             search_text: "".into(),
             toasts: Toasts::default(),
             #[cfg(target_arch = "wasm32")]
-            open_pdb_data: Rc::new(RefCell::new(None)),
-            // #[cfg(target_arch = "wasm32")]
-            // save_file_dialog: None,
+            open_file_data: Rc::new(RefCell::new(None)),
+            #[cfg(target_arch = "wasm32")]
+            save_file_data: Rc::new(RefCell::new(None)),
         }
     }
 }
@@ -98,8 +98,8 @@ impl TemplateApp {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn process_open_pdb_file_result(&mut self) {
-        if let Some((name, plugin)) = self.open_pdb_data.borrow_mut().take() {
+    fn process_open_file_result(&mut self) {
+        if let Some((name, plugin)) = self.open_file_data.borrow_mut().take() {
             self.current_plugin_id = name;
             if let Some(plugin_data) = self.plugins.get_mut(&self.current_plugin_id) {
                 // clear old data
@@ -119,6 +119,27 @@ impl TemplateApp {
                     data.records.insert(get_unique_id(&record), record);
                 }
                 self.plugins.insert(self.current_plugin_id.clone(), data);
+            }
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn process_save_file_result(&mut self) {
+        use std::path::Path;
+
+        if let Some(file_name) = self.save_file_data.borrow_mut().take() {
+            // save to file
+            if let Some(_plugin_data) = self.plugins.get(&self.current_plugin_id) {
+                let path = Path::new(file_name.as_str());
+                // crate::save_all(
+                //     &plugin_data.records,
+                //     &plugin_data.edited_records,
+                //     path,
+                //     &mut self.toasts,
+                //     &self.overwrite,
+                // );
+                self.toasts.info(path.display().to_string());
+                //self.last_directory = path.to_path_buf();
             }
         }
     }
@@ -247,23 +268,10 @@ impl eframe::App for TemplateApp {
 
         // wasm open and save file
         #[cfg(target_arch = "wasm32")]
-        self.process_open_pdb_file_result();
-        // if let Some(dialog) = &mut self.save_file_dialog {
-        //     if dialog.show(ctx).selected() {
-        //         if let Some(path) = dialog.path() {
-        //             // get current plugin
-        //             if let Some(plugin_data) = self.plugins.get(&self.current_plugin_id) {
-        //                 crate::save_all(
-        //                     &plugin_data.records,
-        //                     &plugin_data.edited_records,
-        //                     &path,
-        //                     &mut self.toasts,
-        //                     &self.overwrite,
-        //                 );
-        //             }
-        //         }
-        //     }
-        // }
+        self.process_open_file_result();
+
+        #[cfg(target_arch = "wasm32")]
+        self.process_save_file_result();
 
         // Top Panel
         self.update_top_panel(ctx, frame);

@@ -1,3 +1,7 @@
 /target
 /dist
+/.idea
+
 .vscode/launch.json
+
+.DS_Store
