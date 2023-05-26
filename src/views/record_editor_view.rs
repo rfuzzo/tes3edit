@@ -5,9 +5,13 @@ use crate::TemplateApp;
 impl TemplateApp {
     pub fn record_editor_view(&mut self, ui: &mut egui::Ui) {
         // editor for a specific plugin
-        if let Some(plugin_data) = self.plugins.get_mut(&self.current_plugin_id) {
+        if let Some(plugin_data) = self
+            .plugins
+            .iter_mut()
+            .find(|p| p.id == self.current_plugin_id)
+        {
             // a plugin was found
-            if let Some(current_record_id) = &plugin_data.current_record_id {
+            if let Some(current_record_id) = &plugin_data.selected_record_id {
                 // editor menu bar
                 egui::menu::bar(ui, |ui| {
                     // Revert record button

@@ -7,14 +7,14 @@ use crate::{get_unique_id, TemplateApp};
 impl TemplateApp {
     pub fn records_list_view(&mut self, ui: &mut egui::Ui) {
         // heading
-        if let Some(kvp) = self.plugins.get_key_value(&self.current_plugin_id) {
-            let name = std::path::Path::new(&kvp.0)
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string();
-            ui.heading(name);
+        if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
+            if let Some(path) = &data.full_path {
+                let name = path.file_name().unwrap().to_str().unwrap().to_string();
+                ui.heading(name);
+            } else {
+                // TODO? better?
+                ui.heading("New plugin");
+            }
         } else {
             ui.heading("Records");
         }
@@ -29,7 +29,11 @@ impl TemplateApp {
 
         let tags = get_all_tags();
         // editor for a specific plugin
-        if let Some(data) = self.plugins.get_mut(&self.current_plugin_id) {
+        if let Some(data) = self
+            .plugins
+            .iter_mut()
+            .find(|p| p.id == self.current_plugin_id)
+        {
             // a plugin was found
             if (_search_text != self.search_text) || data.sorted_records.is_empty() {
                 // regenerate records
@@ -144,7 +148,7 @@ impl TemplateApp {
                                     data.edited_records.insert(id.clone(), record.clone());
                                 }
 
-                                data.current_record_id = Some(id);
+                                data.selected_record_id = Some(id);
                             }
                         }
                     });

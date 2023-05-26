@@ -12,29 +12,18 @@ PRs welcome! Feature requests welcome: <https://github.com/rfuzzo/tes3edit/issue
 - Save as patch feature: only save edited records to a new plugin
 - Search records by ID
 
-## TODOs
-
-- [Critical] New record creation
-- [Critical] New plugin creation
-- [Critical] Omwaddon support
-- [Enhancement] Better search function
-- [Enhancement] Dump esp to json/yaml
-- [Enhancement] Load json/yaml
-- [Epic] Compare plugins
-
 ## Getting started
 
 ### App
 
-- download the latest release from github: <https://github.com/rfuzzo/tes3edit>
+- download the latest release from GitHub: <https://github.com/rfuzzo/tes3edit>
 - open `tes3edit.exe`
 
 ### Web
 
 > Unstable! Not feature complete!
 
-- open <https://rfuzzo.github.io/tes3edit/>
-- edit esps there
+- open link <https://rfuzzo.github.io/tes3edit/>
 
 ## Screenshots
 

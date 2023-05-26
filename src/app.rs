@@ -1,22 +1,15 @@
+use std::path::PathBuf;
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
-use std::{collections::HashMap, path::PathBuf};
 
 use egui_notify::Toasts;
 
 use tes3::esp::Plugin;
-use tes3::esp::TES3Object;
 
 use crate::get_unique_id;
 use crate::EScale;
-
-#[derive(Default)]
-pub struct PluginMetadata {
-    pub records: HashMap<String, TES3Object>,
-    pub sorted_records: HashMap<String, Vec<String>>,
-    pub edited_records: HashMap<String, TES3Object>,
-    pub current_record_id: Option<String>,
-}
+use crate::ETheme;
+use crate::PluginMetadata;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -30,7 +23,7 @@ pub struct TemplateApp {
     pub last_directory: PathBuf,
 
     /// The last directory used in the file picker
-    pub light_mode: bool,
+    pub theme: ETheme,
     pub scale: EScale,
 
     pub overwrite: bool,
@@ -40,7 +33,7 @@ pub struct TemplateApp {
     pub current_plugin_id: String,
 
     #[serde(skip)]
-    pub plugins: HashMap<String, PluginMetadata>,
+    pub plugins: Vec<PluginMetadata>,
 
     #[serde(skip)]
     pub search_text: String,
@@ -66,11 +59,11 @@ impl Default for TemplateApp {
         Self {
             recent_plugins: vec![],
             last_directory: "/".into(),
-            light_mode: false,
+            theme: ETheme::Frappe,
             scale: EScale::Small,
             overwrite: false,
             current_plugin_id: "".into(),
-            plugins: HashMap::default(),
+            plugins: vec![],
             search_text: "".into(),
             toasts: Toasts::default(),
             #[cfg(target_arch = "wasm32")]
@@ -86,7 +79,6 @@ impl TemplateApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
-        //cc.egui_ctx.set_pixels_per_point(2.0_f32);
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
@@ -128,7 +120,7 @@ impl TemplateApp {
         use std::path::Path;
 
         if let Some(file_name) = self.save_file_data.borrow_mut().take() {
-            // save to file
+            // todo save to file
             if let Some(_plugin_data) = self.plugins.get(&self.current_plugin_id) {
                 let path = Path::new(file_name.as_str());
                 // crate::save_all(
@@ -148,7 +140,7 @@ impl TemplateApp {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             self.menu_bar_view(ui, frame);
 
-            self.breadcrumb(ui, frame);
+            self.tab_bar(ui, frame);
         });
     }
 
@@ -170,7 +162,7 @@ impl TemplateApp {
     ///
     /// # Panics
     ///
-    /// Panics if .
+    /// Panics if paths are messed up
     pub fn open_plugin(&mut self, path_option: Option<PathBuf>, plugin: Plugin) {
         // save paths if on native
         if let Some(path) = path_option {
@@ -184,9 +176,15 @@ impl TemplateApp {
                 self.recent_plugins.remove(0);
             }
 
+            let plugin_id = path.to_str().unwrap().to_string();
+            self.current_plugin_id = plugin_id.clone();
+
             // if the plugin already is opened, replace
-            self.current_plugin_id = path.to_str().unwrap().to_string();
-            if let Some(plugin_data) = self.plugins.get_mut(&self.current_plugin_id) {
+            if let Some(plugin_data) = self
+                .plugins
+                .iter_mut()
+                .find(|p| p.id == self.current_plugin_id)
+            {
                 // clear old data
                 plugin_data.sorted_records.clear();
                 plugin_data.edited_records.clear();
@@ -198,12 +196,12 @@ impl TemplateApp {
                 }
             } else {
                 // insert new
-                let mut data = PluginMetadata::default();
+                let mut data = PluginMetadata::new(plugin_id, Some(path));
                 // add new data
                 for record in plugin.objects {
                     data.records.insert(get_unique_id(&record), record);
                 }
-                self.plugins.insert(self.current_plugin_id.clone(), data);
+                self.plugins.push(data);
             }
         }
     }
@@ -259,12 +257,10 @@ impl eframe::App for TemplateApp {
         // drag and drop
         self.ui_file_drag_and_drop(ctx);
 
+        // scale
         ctx.set_pixels_per_point(f32::from(self.scale));
-
-        // if light mode is requested but the app is in dark mode, we enable light mode
-        if self.light_mode && ctx.style().visuals.dark_mode {
-            ctx.set_visuals(egui::Visuals::light());
-        }
+        // themes
+        catppuccin_egui::set_theme(ctx, get_theme(&self.theme));
 
         // wasm open and save file
         #[cfg(target_arch = "wasm32")]
@@ -282,7 +278,7 @@ impl eframe::App for TemplateApp {
             ui.horizontal(|ui| {
                 // Number of edited records
                 let mut status_edited = "Edited Records: ".to_owned();
-                if let Some(data) = self.plugins.get_mut(&self.current_plugin_id) {
+                if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
                     status_edited = format!("Edited Records: {}", data.edited_records.len());
                 }
                 ui.label(status_edited);
@@ -305,5 +301,14 @@ impl eframe::App for TemplateApp {
 
         // notifications
         self.toasts.show(ctx);
+    }
+}
+
+fn get_theme(theme: &crate::app::ETheme) -> catppuccin_egui::Theme {
+    match theme {
+        crate::app::ETheme::Frappe => catppuccin_egui::FRAPPE,
+        crate::app::ETheme::Latte => catppuccin_egui::LATTE,
+        crate::app::ETheme::Macchiato => catppuccin_egui::MACCHIATO,
+        crate::app::ETheme::Mocha => catppuccin_egui::MOCHA,
     }
 }

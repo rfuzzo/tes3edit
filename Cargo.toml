@@ -16,6 +16,7 @@ eframe = { version = "0.22", default-features = false, features = [
 egui-notify = { git = "https://github.com/ItsEthra/egui-notify" }
 rfd = { version = "0.11.0", features = ["file-handle-inner"] }
 serde = { version = "1", features = ["derive"] }
+catppuccin-egui = "3.0"
 
 [dependencies.tes3]
 git = "https://github.com/rfuzzo/tes3"
