@@ -46,15 +46,9 @@ jobs:
     name: trunk
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: 1.68.0
-          target: wasm32-unknown-unknown
-          override: true
+      - uses: actions/checkout@v3
 
-      - run: sudo apt install libgtk-3-dev
+      - run: sudo apt update && sudo apt install libgtk-3-dev
       - run: sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev
 
       - name: Download and install Trunk binary
