@@ -78,7 +78,7 @@ impl TemplateApp {
                                 &plugin_data.edited_records,
                                 &path,
                                 &mut self.toasts,
-                                true, //TODO set this to always true?
+                                true,
                             );
 
                             // update current path
@@ -283,26 +283,32 @@ impl TemplateApp {
                         .to_str()
                         .unwrap()
                         .to_string();
-                    let r = ui.button(name);
-                    if r.clicked() {
-                        // open Plugin
-                        self.current_plugin_id = key.clone();
-                    }
 
-                    r.context_menu(|ui| {
-                        if ui.button("Close").clicked() {
-                            // remove the plugin
-                            self.current_plugin_id = "".into();
+                    // tab item view
+                    ui.push_id(key.clone(), |ui| {
+                        ui.horizontal(|ui| {
+                            // tab item name
+                            if ui.button(name).clicked() {
+                                // open Plugin
+                                self.current_plugin_id = key.clone();
+                            }
+                            // tab item close button
+                            // TODO move to the left
+                            let close_button = ui.button("x");
+                            if close_button.clicked() {
+                                // remove the plugin
+                                self.current_plugin_id = "".into();
 
-                            // get the plugin idx with the current id
-                            if let Some((idx, _vm)) =
-                                self.plugins.iter().enumerate().find(|p| p.1.id == key)
-                            {
-                                self.plugins.remove(idx);
+                                // get the plugin idx with the current id
+                                if let Some((idx, _vm)) =
+                                    self.plugins.iter().enumerate().find(|p| p.1.id == key)
+                                {
+                                    self.plugins.remove(idx);
+                                }
                             }
 
-                            ui.close_menu();
-                        }
+                            ui.separator();
+                        });
                     });
                 }
             });
