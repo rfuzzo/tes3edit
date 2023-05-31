@@ -1,8 +1,4 @@
-use std::collections::HashMap;
-
-use tes3::esp::{EditorId, TES3Object, TypeInfo};
-
-use crate::{get_unique_id, TemplateApp};
+use crate::{create, create_from_tag, get_all_tags, get_unique_id, ERecordType, TemplateApp};
 
 impl TemplateApp {
     pub fn records_list_view(&mut self, ui: &mut egui::Ui) {
@@ -12,12 +8,18 @@ impl TemplateApp {
                 let name = path.file_name().unwrap().to_str().unwrap().to_string();
                 ui.heading(name);
             } else {
-                // TODO? better?
                 ui.heading("New plugin");
             }
         } else {
             ui.heading("Records");
         }
+
+        // editor for a specific plugin
+        let tags = get_all_tags();
+        let Some(data) = self
+                    .plugins
+                    .iter_mut()
+                    .find(|p| p.id == self.current_plugin_id) else { return };
 
         // search bar
         let _search_text = self.search_text.clone();
@@ -27,174 +29,141 @@ impl TemplateApp {
         });
         ui.separator();
 
-        let tags = get_all_tags();
-        // editor for a specific plugin
-        if let Some(data) = self
-            .plugins
-            .iter_mut()
-            .find(|p| p.id == self.current_plugin_id)
-        {
-            // a plugin was found
-            if (_search_text != self.search_text) || data.sorted_records.is_empty() {
-                // regenerate records
-                let mut filtered_records_by_tag: HashMap<String, Vec<String>> = HashMap::default();
-                for tag in &tags {
-                    filtered_records_by_tag.insert(tag.clone(), vec![]);
-                    let mut records_inner: Vec<&TES3Object> = data
-                        .records
-                        .values()
-                        .filter(|r| r.tag_str() == tag)
-                        .collect();
+        // add record button
+        ui.horizontal(|ui| {
+            let mut record_type = ERecordType::MISC;
+            egui::ComboBox::from_label("")
+                .selected_text(format!("{:?}", record_type))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut record_type, ERecordType::ACTI, "ACTI");
+                    ui.selectable_value(&mut record_type, ERecordType::ALCH, "ALCH");
+                    ui.selectable_value(&mut record_type, ERecordType::APPA, "APPA");
+                });
 
-                    // search filter
-                    if !self.search_text.is_empty() {
-                        records_inner = records_inner
-                            .iter()
-                            .copied()
-                            .filter(|p| {
-                                get_unique_id(p)
-                                    .to_lowercase()
-                                    .contains(self.search_text.to_lowercase().as_str())
-                            })
-                            .collect();
-                    }
-                    if records_inner.is_empty() {
-                        continue;
-                    }
-
-                    records_inner.sort_by(|a, b| a.editor_id().cmp(&b.editor_id()));
-                    filtered_records_by_tag.insert(
-                        tag.clone(),
-                        records_inner.iter().map(|e| get_unique_id(e)).collect(),
-                    );
+            if ui.button("Add record").clicked() {
+                if let Some(instance) = create(record_type) {
+                    data.edited_records
+                        .insert(get_unique_id(&instance), instance);
+                    data.cached_ids.clear();
                 }
-                data.sorted_records = filtered_records_by_tag;
             }
+        });
 
-            // logic
-            let mut record_ids_to_delete = vec![];
+        // regenerate records
+        if (_search_text != self.search_text) || data.cached_ids.is_empty() {
+            data.regenerate_id_cache(&self.search_text);
+        }
 
-            // add button // todo move?
-            // if ui.button("Add record").clicked() {
-            //     // get type and id
-            // }
+        // the record list
+        let mut record_ids_to_delete = vec![];
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            // order by tags
+            for tag in tags {
+                let ids = &data.cached_ids[&tag];
+                if ids.is_empty() {
+                    continue;
+                }
 
-            // the record list
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                // order by tags
-                for tag in tags {
-                    let records_of_tag: Vec<&TES3Object> = data.sorted_records[&tag]
-                        .iter()
-                        .filter_map(|e| data.records.get(e))
-                        .collect();
+                // add headers and subitems
+                let tag_header = egui::CollapsingHeader::new(tag.clone()).show(ui, |ui| {
+                    // add records
+                    // sort
 
-                    if records_of_tag.is_empty() {
-                        continue;
-                    }
+                    for id in ids.iter() {
+                        // annotations
+                        let mut label = id.to_string();
+                        // hack for header record
+                        if id.starts_with("TES3,") {
+                            label = "Header".into();
+                        }
+                        // modified records
+                        if data.edited_records.contains_key(id) {
+                            label = format!("{}*", label);
+                            ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
+                        } else {
+                            ui.visuals_mut().override_text_color = None;
+                        }
 
-                    // add headers and subitems
-                    let tag_header = egui::CollapsingHeader::new(tag).show(ui, |ui| {
-                        // add records
-                        // sort
-
-                        for record_ptr in records_of_tag.iter() {
-                            let record = *record_ptr;
-                            let id = get_unique_id(record);
-
-                            // annotations
-                            let mut label = record.editor_id().to_string();
-                            // hack for header record
-                            if label.is_empty() && record.tag_str() == "TES3" {
-                                label = "Header".into();
+                        // record list item view
+                        let w = egui::Label::new(label).sense(egui::Sense::click());
+                        let response = ui.add(w);
+                        // context menu
+                        response.clone().context_menu(|ui| {
+                            if ui.button("Delete").clicked() {
+                                // delete a record
+                                record_ids_to_delete.push(id.clone());
+                                ui.close_menu();
                             }
-                            // modified records
-                            if data.edited_records.contains_key(&id) {
-                                label = format!("{}*", label);
-                                ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
-                            } else {
-                                ui.visuals_mut().override_text_color = None;
-                            }
+                        });
 
-                            // record list item view
-                            let w = egui::Label::new(label).sense(egui::Sense::click());
-                            let response = ui.add(w);
-                            // context menu
-                            response.clone().context_menu(|ui| {
-                                if ui.button("Delete").clicked() {
-                                    // delete a record
-                                    record_ids_to_delete.push(id.clone());
-                                    ui.close_menu();
-                                }
-                            });
-
-                            // selected event
-                            if response.clicked() {
-                                // cleanup old records
-                                let mut to_remove = Vec::new();
-                                for (key, edited_record) in data.edited_records.clone() {
-                                    if let Some(original) = data.records.get(&key) {
-                                        // remove if no change
-                                        if original.eq(&edited_record) {
-                                            to_remove.push(key);
-                                        }
+                        // selected event
+                        if response.clicked() {
+                            // cleanup old records
+                            let mut to_remove = Vec::new();
+                            for (key, edited_record) in data.edited_records.clone() {
+                                if let Some(original) = data.records.get(&key) {
+                                    // remove if no change
+                                    if original.eq(&edited_record) {
+                                        to_remove.push(key);
                                     }
                                 }
-                                for r in to_remove {
-                                    data.edited_records.remove(&r);
-                                }
+                            }
+                            for r in to_remove {
+                                data.edited_records.remove(&r);
+                            }
 
-                                // add a copy of this record to the edited records
-                                if !data.edited_records.contains_key(&id) {
+                            // add a copy of this record to the edited records
+                            if !data.edited_records.contains_key(id) {
+                                // get record
+                                let mut record_or_none = data.records.get(id);
+                                if data.edited_records.contains_key(id) {
+                                    record_or_none = data.edited_records.get(id);
+                                }
+                                if let Some(record) = record_or_none {
                                     data.edited_records.insert(id.clone(), record.clone());
                                 }
-
-                                data.selected_record_id = Some(id);
                             }
+
+                            data.selected_record_id = Some(id.to_string());
                         }
-                    });
+                    }
+                });
 
-                    // context menu of tag header
-                    tag_header.header_response.context_menu(|ui| {
-                        // if ui.button("Add").clicked() {
-                        //     // todo
-                        //     let instance = Create(tag);
-                        //     self.records.insert(get_unique_id(&instance), instance);
-
-                        //     ui.close_menu();
-                        // }
-                        if ui.button("Delete all").clicked() {
-                            for r in records_of_tag.iter() {
-                                let id = get_unique_id(r);
-                                record_ids_to_delete.push(id.clone());
-                            }
-                            ui.close_menu();
+                // context menu of tag header
+                tag_header.header_response.context_menu(|ui| {
+                    // todo add record button
+                    if ui.button("Add record").clicked() {
+                        if let Some(instance) = create_from_tag(&tag.clone()) {
+                            data.edited_records
+                                .insert(get_unique_id(&instance), instance);
+                        } else {
+                            self.toasts.warning("Could not create record");
                         }
-                    });
-                }
 
-                ui.allocate_space(ui.available_size()); // put this LAST in your panel/window code
-            });
+                        ui.close_menu();
+                    }
 
-            // delete stuff
-            record_ids_to_delete.dedup();
-            for k in record_ids_to_delete {
-                data.records.remove(&k);
+                    ui.separator();
+
+                    // delete all button
+                    if ui.button("Delete all").clicked() {
+                        for id in ids.iter() {
+                            record_ids_to_delete.push(id.clone());
+                        }
+                        ui.close_menu();
+                    }
+                });
             }
+
+            ui.allocate_space(ui.available_size()); // put this LAST in your panel/window code
+        });
+
+        // delete stuff
+        record_ids_to_delete.dedup();
+        for k in record_ids_to_delete {
+            data.records.remove(&k);
         }
+
+        // check if any id updated and force re-caching if yes
     }
 }
-
-/// todo super dumb but I can't be bothered to mess around with enums now
-fn get_all_tags() -> Vec<String> {
-    let v = vec![
-        "TES3", "GMST", "GLOB", "CLAS", "FACT", "RACE", "SOUN", "SNDG", "SKIL", "MGEF", "SCPT",
-        "REGN", "BSGN", "SSCR", "LTEX", "SPEL", "STAT", "DOOR", "MISC", "WEAP", "CONT", "CREA",
-        "BODY", "LIGH", "ENCH", "NPC_", "ARMO", "CLOT", "REPA", "ACTI", "APPA", "LOCK", "PROB",
-        "INGR", "BOOK", "ALCH", "LEVI", "LEVC", "CELL", "LAND", "PGRD", "DIAL", "INFO",
-    ];
-    v.iter().map(|e| e.to_string()).collect::<Vec<String>>()
-}
-
-// fn Create(tag: &str) -> TES3Object {
-//     todo!()
-// }

@@ -285,6 +285,7 @@ impl TemplateApp {
                         .to_string();
 
                     // tab item view
+                    // TODO fix margins, background
                     ui.push_id(key.clone(), |ui| {
                         ui.horizontal(|ui| {
                             // tab item name
@@ -293,7 +294,6 @@ impl TemplateApp {
                                 self.current_plugin_id = key.clone();
                             }
                             // tab item close button
-                            // TODO move to the left
                             let close_button = ui.button("x");
                             if close_button.clicked() {
                                 // remove the plugin
