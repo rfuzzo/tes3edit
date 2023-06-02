@@ -2,6 +2,8 @@ use crate::{create, create_from_tag, get_all_tags, get_unique_id, ERecordType, T
 
 impl TemplateApp {
     pub fn records_list_view(&mut self, ui: &mut egui::Ui) {
+        let mut regen = false;
+
         // heading
         if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
             if let Some(path) = &data.full_path {
@@ -59,8 +61,13 @@ impl TemplateApp {
         egui::ScrollArea::vertical().show(ui, |ui| {
             // order by tags
             for tag in tags {
-                let ids = &data.cached_ids[&tag];
-                if ids.is_empty() {
+                let ids_by_tag = data
+                    .cached_ids
+                    .iter()
+                    .filter(|p| p.split(',').collect::<Vec<_>>().first().unwrap() == &tag)
+                    .map(|e| e.to_owned())
+                    .collect::<Vec<_>>();
+                if ids_by_tag.is_empty() {
                     continue;
                 }
 
@@ -69,7 +76,7 @@ impl TemplateApp {
                     // add records
                     // sort
 
-                    for id in ids.iter() {
+                    for id in ids_by_tag.iter() {
                         // annotations
                         let mut label = id.to_string();
                         // hack for header record
@@ -126,6 +133,12 @@ impl TemplateApp {
 
                             data.selected_record_id = Some(id.to_string());
                         }
+
+                        // check here if any id has changed
+                        // TODO
+                        if !data.get_record_ids().contains(&id) {
+                            regen = true;
+                        }
                     }
                 });
 
@@ -147,7 +160,7 @@ impl TemplateApp {
 
                     // delete all button
                     if ui.button("Delete all").clicked() {
-                        for id in ids.iter() {
+                        for id in ids_by_tag.iter() {
                             record_ids_to_delete.push(id.clone());
                         }
                         ui.close_menu();
@@ -164,6 +177,9 @@ impl TemplateApp {
             data.records.remove(&k);
         }
 
-        // check if any id updated and force re-caching if yes
+        // clear cache
+        if regen {
+            data.cached_ids.clear();
+        }
     }
 }

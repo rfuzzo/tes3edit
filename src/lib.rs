@@ -3,7 +3,6 @@
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
-    time::Duration,
 };
 
 pub use app::TemplateApp;
@@ -252,7 +251,7 @@ pub struct PluginMetadata {
     pub full_path: Option<PathBuf>,
     pub records: HashMap<String, TES3Object>,
     /// cached ids of all records and edited records of this plugin
-    pub cached_ids: HashMap<String, Vec<String>>,
+    pub cached_ids: Vec<String>,
     pub edited_records: HashMap<String, TES3Object>,
     pub selected_record_id: Option<String>,
 }
@@ -263,7 +262,7 @@ impl PluginMetadata {
             id,
             full_path,
             records: HashMap::default(),
-            cached_ids: HashMap::default(),
+            cached_ids: vec![],
             edited_records: HashMap::default(),
             selected_record_id: None,
         }
@@ -271,105 +270,77 @@ impl PluginMetadata {
 
     /// Regenerates record id cache of this plugin
     pub fn regenerate_id_cache(&mut self, filter_text: &String) {
-        let mut filtered_ids_by_tag: HashMap<String, Vec<String>> = HashMap::default();
-        for tag in get_all_tags() {
-            filtered_ids_by_tag.insert(tag.clone(), vec![]);
-            let mut records_inner = self.get_record_ids_for_tag(Some(tag.as_str()));
+        self.cached_ids.clear();
 
-            // search filter
-            if !filter_text.is_empty() {
-                records_inner = records_inner
-                    .iter()
-                    .filter(|p| {
-                        p.to_lowercase()
-                            .contains(filter_text.to_lowercase().as_str())
-                    })
-                    .map(|e| e.to_owned())
-                    .collect::<Vec<_>>();
-            }
-
-            if records_inner.is_empty() {
-                continue;
-            }
-
-            records_inner.sort();
-            filtered_ids_by_tag.insert(tag.clone(), records_inner);
-        }
-        self.cached_ids = filtered_ids_by_tag;
-    }
-
-    /// Get all record ids of this plugin for a specific tag
-    pub fn get_record_ids_for_tag(&self, tag_or_none: Option<&str>) -> Vec<String> {
-        let mut is_filter = false;
-        let mut tag = "";
-        if let Some(t) = tag_or_none {
-            is_filter = true;
-            tag = t;
-        }
-
-        // get records
-        let mut records_inner = self
-            .records
-            .values()
-            .filter(|r| is_filter && r.tag_str() == tag)
-            .map(get_unique_id)
+        let mut ids = self
+            .get_record_ids()
+            .iter()
+            .map(|e| e.to_string())
             .collect::<Vec<_>>();
-
-        // get edited records
-        for id in self
-            .edited_records
-            .values()
-            .filter(|r| r.tag_str() == tag)
-            .map(get_unique_id)
-        {
-            if !records_inner.contains(&id) {
-                records_inner.push(id);
-            }
+        // search filter
+        if !filter_text.is_empty() {
+            ids = ids
+                .iter()
+                .filter(|p| {
+                    p.to_lowercase()
+                        .contains(filter_text.to_lowercase().as_str())
+                })
+                .map(|e| e.to_owned())
+                .collect::<Vec<_>>();
         }
-        records_inner
-    }
-}
-
-/// Get assembled records in-app
-///
-/// # Panics
-///
-/// Panics if no header found
-pub fn get_records(
-    records: &HashMap<String, TES3Object>,
-    edited_records: &HashMap<String, TES3Object>,
-) -> Vec<TES3Object> {
-    // construct records from both lists
-    let mut final_records = records.clone();
-    for r in edited_records.iter() {
-        final_records.insert(r.0.to_string(), r.1.clone());
+        ids.sort();
+        self.cached_ids = ids.iter().map(|e| e.to_string()).collect::<Vec<_>>();
     }
 
-    // sort records
-    // todo sort all records, header first
-    let mut records_vec: Vec<_> = final_records.values().cloned().collect();
-    let pos = records_vec
-        .iter()
-        .position(|e| e.tag_str() == "TES3")
-        .unwrap();
-    let header = records_vec.remove(pos);
-    records_vec.insert(0, header);
-    records_vec
+    /// Returns the get records of this [`PluginMetadata`].
+    fn get_record_ids(&self) -> Vec<&String> {
+        let mut records = self.records.keys();
+        let mut edited_ids = self.edited_records.keys();
+        // for r in self.edited_records.iter() {
+        //     final_records.insert(r.0.to_string(), r.1.clone());
+        // }
+
+        let x = records.into_iter().chain(edited_ids).collect::<Vec<_>>();
+
+        x
+    }
+
+    /// Get assembled records in-app
+    ///
+    /// # Panics
+    ///
+    /// Panics if no header found
+    fn get_records_sorted(&self) -> Vec<TES3Object> {
+        // construct records from both lists
+        let mut final_records = self.records.clone();
+        for r in self.edited_records.iter() {
+            final_records.insert(r.0.to_string(), r.1.clone());
+        }
+
+        // sort records
+        // todo sort all records, header first
+        let mut records: Vec<_> = final_records.values().cloned().collect();
+        let pos = records.iter().position(|e| e.tag_str() == "TES3").unwrap();
+        let header = records.remove(pos);
+        records.insert(0, header);
+
+        records
+    }
 }
 
 /// Saves records as plugin to the specified path
 /// If overwrite is not specified, appends new.esp as extension
 pub fn save_plugin<P>(
-    records: &HashMap<String, TES3Object>,
-    edited_records: &HashMap<String, TES3Object>,
+    data: &PluginMetadata,
     plugin_path: P,
     toasts: &mut Toasts,
     overwrite: bool,
-) where
+) -> bool
+where
     P: AsRef<Path>,
 {
     let mut plugin = Plugin {
-        objects: get_records(records, edited_records),
+        objects: data.get_records_sorted(),
     };
     // save
     let mut output_path = plugin_path.as_ref().to_path_buf();
@@ -380,9 +351,11 @@ pub fn save_plugin<P>(
     match plugin.save_path(output_path) {
         Ok(_) => {
             toasts.success("Plugin saved");
+            true
         }
         Err(_) => {
             toasts.error("Could not save plugin");
+            false
         }
     }
 }
@@ -392,20 +365,16 @@ pub fn save_plugin<P>(
 /// # Panics
 ///
 /// Panics if plugin has no header
-pub fn save_patch<P>(
-    records: &HashMap<String, TES3Object>,
-    edited_records: &HashMap<String, TES3Object>,
-    plugin_path: P,
-    toasts: &mut Toasts,
-) where
+pub fn save_patch<P>(data: &PluginMetadata, plugin_path: P, toasts: &mut Toasts) -> bool
+where
     P: AsRef<Path>,
 {
-    let mut records_vec: Vec<_> = edited_records.values().cloned().collect();
+    let mut records_vec: Vec<_> = data.edited_records.values().cloned().collect();
 
     // if a header in changed files, then take that one instead of the original one
-    // panic here since this is undefined behavior
-    let mut header = records.get("TES3,").unwrap();
-    if let Some(h) = edited_records.get("TES3,") {
+    // TODO panic here if no header since this is undefined behavior
+    let mut header = data.records.get("TES3,").unwrap();
+    if let Some(h) = data.edited_records.get("TES3,") {
         header = h;
     }
     records_vec.insert(0, header.clone());
@@ -418,14 +387,12 @@ pub fn save_patch<P>(
     let output_path = plugin_path.as_ref().with_extension("patch.esp");
     match plugin.save_path(output_path) {
         Ok(_) => {
-            toasts
-                .success("Plugin saved")
-                .set_duration(Some(Duration::from_secs(5)));
+            toasts.success("Plugin saved");
+            true
         }
         Err(_) => {
-            toasts
-                .error("Could not save plugin")
-                .set_duration(Some(Duration::from_secs(5)));
+            toasts.error("Could not save plugin");
+            false
         }
     }
 }

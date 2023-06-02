@@ -2,7 +2,10 @@ use std::path::Path;
 
 use tes3::esp::{Header, Plugin};
 
-use crate::{get_plugin_id, get_unique_id, EScale, ETheme, PluginMetadata, TemplateApp};
+use crate::{
+    get_plugin_id, get_unique_id, save_patch, save_plugin, EScale, ETheme, PluginMetadata,
+    TemplateApp,
+};
 
 impl TemplateApp {
     #[allow(unused_variables)] // for wasm
@@ -68,25 +71,19 @@ impl TemplateApp {
 
                     if let Some(path) = some_path {
                         // get current plugin
-                        if let Some(plugin_data) = self
+                        if let Some(data) = self
                             .plugins
                             .iter_mut()
                             .find(|p| p.id == self.current_plugin_id)
                         {
-                            crate::save_plugin(
-                                &plugin_data.records,
-                                &plugin_data.edited_records,
-                                &path,
-                                &mut self.toasts,
-                                true,
-                            );
-
-                            // update current path
-                            plugin_data.full_path = Some(path.clone());
-                            let plugin_id = get_plugin_id(plugin_data);
-                            plugin_data.id = plugin_id.clone();
-                            self.current_plugin_id = plugin_id;
-                            self.last_directory = path;
+                            if save_plugin(data, &path, &mut self.toasts, true) {
+                                // update current path
+                                data.full_path = Some(path.clone());
+                                let plugin_id = get_plugin_id(data);
+                                data.id = plugin_id.clone();
+                                self.current_plugin_id = plugin_id;
+                                self.last_directory = path;
+                            }
                         }
                     }
 
@@ -104,24 +101,19 @@ impl TemplateApp {
 
                     if let Some(path) = some_path {
                         // get current plugin
-                        if let Some(plugin_data) = self
+                        if let Some(data) = self
                             .plugins
                             .iter_mut()
                             .find(|p| p.id == self.current_plugin_id)
                         {
-                            crate::save_patch(
-                                &plugin_data.records,
-                                &plugin_data.edited_records,
-                                &path,
-                                &mut self.toasts,
-                            );
-
-                            // update current path
-                            plugin_data.full_path = Some(path.clone());
-                            let plugin_id = get_plugin_id(plugin_data);
-                            plugin_data.id = plugin_id.clone();
-                            self.current_plugin_id = plugin_id;
-                            self.last_directory = path;
+                            if save_patch(data, &path, &mut self.toasts) {
+                                // update current path
+                                data.full_path = Some(path.clone());
+                                let plugin_id = get_plugin_id(data);
+                                data.id = plugin_id.clone();
+                                self.current_plugin_id = plugin_id;
+                                self.last_directory = path;
+                            }
                         }
                     }
 
@@ -192,12 +184,7 @@ impl TemplateApp {
             if ui.button("Save Patch").clicked() {
                 if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
                     if let Some(path) = &data.full_path {
-                        crate::save_patch(
-                            &data.records,
-                            &data.edited_records,
-                            path,
-                            &mut self.toasts,
-                        );
+                        save_patch(data, path, &mut self.toasts);
                     } else {
                         // log error
                         self.toasts.error("Please use Save As first");
@@ -210,13 +197,7 @@ impl TemplateApp {
                 // get current plugin
                 if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
                     if let Some(path) = &data.full_path {
-                        crate::save_plugin(
-                            &data.records,
-                            &data.edited_records,
-                            path,
-                            &mut self.toasts,
-                            self.overwrite,
-                        );
+                        save_plugin(data, path, &mut self.toasts, self.overwrite);
                     } else {
                         // log error
                         self.toasts.error("Please use Save As first");
