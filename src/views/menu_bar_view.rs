@@ -1,11 +1,12 @@
 use std::path::Path;
 
-use tes3::esp::{Header, Plugin};
+#[cfg(not(target_arch = "wasm32"))]
+use tes3::esp::Header;
+use tes3::esp::Plugin;
 
-use crate::{
-    get_plugin_id, get_unique_id, save_patch, save_plugin, EScale, ETheme, PluginMetadata,
-    TemplateApp,
-};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::{get_plugin_id, get_unique_id, save_patch, save_plugin};
+use crate::{EScale, ETheme, PluginMetadata, TemplateApp};
 
 impl TemplateApp {
     #[allow(unused_variables)] // for wasm

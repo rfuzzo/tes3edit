@@ -95,38 +95,6 @@ impl TemplateApp {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn process_open_file_result(&mut self) {
-        if let Some((name, plugin)) = self.open_file_data.borrow_mut().take() {
-            let plugin_id = name;
-            self.current_plugin_id = plugin_id.clone();
-
-            if let Some(plugin_data) = self
-                .plugins
-                .iter_mut()
-                .find(|p| p.id == self.current_plugin_id)
-            {
-                // clear old data
-                plugin_data.sorted_records.clear();
-                plugin_data.edited_records.clear();
-                plugin_data.records.clear();
-
-                // add new data
-                for record in plugin.objects {
-                    plugin_data.records.insert(get_unique_id(&record), record);
-                }
-            } else {
-                // insert new
-                let mut data = PluginMetadata::new(plugin_id, None);
-                // add new data
-                for record in plugin.objects {
-                    data.records.insert(get_unique_id(&record), record);
-                }
-                self.plugins.push(data);
-            }
-        }
-    }
-
-    #[cfg(target_arch = "wasm32")]
     fn process_save_file_result(&mut self) {
         use std::path::Path;
 
@@ -168,6 +136,38 @@ impl TemplateApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.record_editor_view(ui);
         });
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn process_open_file_result(&mut self) {
+        if let Some((name, plugin)) = self.open_file_data.borrow_mut().take() {
+            let plugin_id = name;
+            self.current_plugin_id = plugin_id.clone();
+
+            if let Some(plugin_data) = self
+                .plugins
+                .iter_mut()
+                .find(|p| p.id == self.current_plugin_id)
+            {
+                // clear old data
+                plugin_data.cached_ids.clear();
+                plugin_data.edited_records.clear();
+                plugin_data.records.clear();
+
+                // add new data
+                for record in plugin.objects {
+                    plugin_data.records.insert(get_unique_id(&record), record);
+                }
+            } else {
+                // insert new
+                let mut data = PluginMetadata::new(plugin_id, None);
+                // add new data
+                for record in plugin.objects {
+                    data.records.insert(get_unique_id(&record), record);
+                }
+                self.plugins.push(data);
+            }
+        }
     }
 
     /// Open a new plugin
