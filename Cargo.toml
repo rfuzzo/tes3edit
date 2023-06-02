@@ -17,6 +17,7 @@ egui-notify = { git = "https://github.com/ItsEthra/egui-notify" }
 rfd = { version = "0.11.0", features = ["file-handle-inner"] }
 serde = { version = "1", features = ["derive"] }
 catppuccin-egui = "3.0"
+strum = { version = "0.24", features = ["derive"] }
 
 [dependencies.tes3]
 git = "https://github.com/rfuzzo/tes3"

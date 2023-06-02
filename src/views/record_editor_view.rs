@@ -21,9 +21,7 @@ impl TemplateApp {
                             // remove from edited records
                             plugin_data.edited_records.remove(current_record_id);
 
-                            self.toasts
-                                .info("Record reverted")
-                                .set_duration(Some(std::time::Duration::from_secs(5)));
+                            self.toasts.info("Record reverted");
                         }
                     }
                 });
@@ -37,7 +35,7 @@ impl TemplateApp {
                             .get_mut(current_record_id)
                             .unwrap()
                             .add_editor(ui, None);
-                    } else {
+                    } else if plugin_data.records.contains_key(current_record_id) {
                         plugin_data
                             .records
                             .get_mut(current_record_id)

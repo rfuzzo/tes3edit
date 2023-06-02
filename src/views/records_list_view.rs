@@ -1,9 +1,9 @@
+use strum::IntoEnumIterator;
+
 use crate::{create, create_from_tag, get_all_tags, get_unique_id, ERecordType, TemplateApp};
 
 impl TemplateApp {
     pub fn records_list_view(&mut self, ui: &mut egui::Ui) {
-        let mut regen = false;
-
         // heading
         if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
             if let Some(path) = &data.full_path {
@@ -33,20 +33,20 @@ impl TemplateApp {
 
         // add record button
         ui.horizontal(|ui| {
-            let mut record_type = ERecordType::MISC;
             egui::ComboBox::from_label("")
-                .selected_text(format!("{:?}", record_type))
+                .selected_text(format!("{:?}", self.record_type))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut record_type, ERecordType::ACTI, "ACTI");
-                    ui.selectable_value(&mut record_type, ERecordType::ALCH, "ALCH");
-                    ui.selectable_value(&mut record_type, ERecordType::APPA, "APPA");
+                    for t in ERecordType::iter() {
+                        ui.selectable_value(&mut self.record_type, t, t.to_string());
+                    }
                 });
 
             if ui.button("Add record").clicked() {
-                if let Some(instance) = create(record_type) {
-                    data.edited_records
-                        .insert(get_unique_id(&instance), instance);
+                if let Some(instance) = create(self.record_type) {
+                    let new_id = get_unique_id(&instance);
+                    data.edited_records.insert(new_id.clone(), instance);
                     data.cached_ids.clear();
+                    data.selected_record_id = Some(new_id);
                 }
             }
         });
@@ -133,22 +133,18 @@ impl TemplateApp {
 
                             data.selected_record_id = Some(id.to_string());
                         }
-
-                        // check here if any id has changed
-                        // TODO
-                        if !data.get_record_ids().contains(&id) {
-                            regen = true;
-                        }
                     }
                 });
 
                 // context menu of tag header
                 tag_header.header_response.context_menu(|ui| {
-                    // todo add record button
+                    // add record button
                     if ui.button("Add record").clicked() {
                         if let Some(instance) = create_from_tag(&tag.clone()) {
-                            data.edited_records
-                                .insert(get_unique_id(&instance), instance);
+                            let new_id = get_unique_id(&instance);
+                            data.edited_records.insert(new_id.clone(), instance);
+                            data.cached_ids.clear();
+                            data.selected_record_id = Some(new_id);
                         } else {
                             self.toasts.warning("Could not create record");
                         }
@@ -172,13 +168,39 @@ impl TemplateApp {
         });
 
         // delete stuff
+        // TODO deleting actually removes
         record_ids_to_delete.dedup();
-        for k in record_ids_to_delete {
-            data.records.remove(&k);
+        if !record_ids_to_delete.is_empty() {
+            for k in record_ids_to_delete {
+                if data.records.contains_key(&k) {
+                    data.records.remove(&k);
+                }
+                if data.edited_records.contains_key(&k) {
+                    data.edited_records.remove(&k);
+                }
+            }
+            data.cached_ids.clear();
         }
 
         // clear cache
-        if regen {
+        let mut updates = vec![];
+        for (key, v) in data.edited_records.clone() {
+            let new_key = get_unique_id(&v);
+            if new_key != *key {
+                updates.push((key, new_key));
+            }
+        }
+        if !updates.is_empty() {
+            for (old_key, new_key) in updates {
+                // update current_plugin_id
+                if data.selected_record_id == Some(old_key.clone()) {
+                    data.selected_record_id = Some(new_key.clone());
+                }
+                // update HashMap
+                if let Some(v) = data.edited_records.remove(&old_key) {
+                    data.edited_records.insert(new_key, v);
+                }
+            }
             data.cached_ids.clear();
         }
     }

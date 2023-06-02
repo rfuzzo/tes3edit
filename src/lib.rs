@@ -11,6 +11,7 @@ use egui_notify::Toasts;
 mod app;
 mod views;
 use serde::{Deserialize, Serialize};
+use strum::{Display, EnumIter};
 use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
 
 /// Catpuccino themes
@@ -41,7 +42,7 @@ impl From<EScale> for f32 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Display)]
 pub enum ERecordType {
     TES3,
     GMST,
@@ -294,15 +295,13 @@ impl PluginMetadata {
 
     /// Returns the get records of this [`PluginMetadata`].
     fn get_record_ids(&self) -> Vec<&String> {
-        let mut records = self.records.keys();
-        let mut edited_ids = self.edited_records.keys();
+        let records = self.records.keys();
+        let edited_ids = self.edited_records.keys();
         // for r in self.edited_records.iter() {
         //     final_records.insert(r.0.to_string(), r.1.clone());
         // }
 
-        let x = records.into_iter().chain(edited_ids).collect::<Vec<_>>();
-
-        x
+        records.into_iter().chain(edited_ids).collect::<Vec<_>>()
     }
 
     /// Get assembled records in-app

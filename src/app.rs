@@ -7,6 +7,7 @@ use egui_notify::Toasts;
 use tes3::esp::Plugin;
 
 use crate::get_unique_id;
+use crate::ERecordType;
 use crate::EScale;
 use crate::ETheme;
 use crate::PluginMetadata;
@@ -38,6 +39,9 @@ pub struct TemplateApp {
     #[serde(skip)]
     pub search_text: String,
 
+    #[serde(skip)]
+    pub record_type: ERecordType,
+
     // ui
     #[serde(skip)]
     pub toasts: Toasts,
@@ -65,6 +69,7 @@ impl Default for TemplateApp {
             current_plugin_id: "".into(),
             plugins: vec![],
             search_text: "".into(),
+            record_type: ERecordType::MISC,
             toasts: Toasts::default(),
             #[cfg(target_arch = "wasm32")]
             open_file_data: Rc::new(RefCell::new(None)),
@@ -126,7 +131,7 @@ impl TemplateApp {
         use std::path::Path;
 
         if let Some(file_name) = self.save_file_data.borrow_mut().take() {
-            // todo save to file
+            // todo save to file in wasm
             if let Some(_plugin_data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id)
             {
                 let path = Path::new(file_name.as_str());
