@@ -5,11 +5,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub use app::TemplateApp;
-use egui_notify::Toasts;
-
 mod app;
+mod app_ui;
 mod views;
+
+pub use app::TemplateApp;
+
+use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
 use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};

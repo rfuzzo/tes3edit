@@ -46,6 +46,9 @@ pub struct TemplateApp {
     #[serde(skip)]
     pub toasts: Toasts,
 
+    #[serde(skip)]
+    window_open: bool,
+
     // https://github.com/ergrelet/resym/blob/e4d243eb9459211ade0c5bae16096712a0615b0b/resym/src/resym_app.rs
     /// Field used by wasm32 targets to store file information
     /// temporarily when selecting a file to open.
@@ -71,6 +74,7 @@ impl Default for TemplateApp {
             search_text: "".into(),
             record_type: ERecordType::MISC,
             toasts: Toasts::default(),
+            window_open: false,
             #[cfg(target_arch = "wasm32")]
             open_file_data: Rc::new(RefCell::new(None)),
             #[cfg(target_arch = "wasm32")]
@@ -116,7 +120,7 @@ impl TemplateApp {
         }
     }
 
-    fn update_top_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    pub fn update_top_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             self.menu_bar_view(ui, frame);
 
@@ -124,7 +128,7 @@ impl TemplateApp {
         });
     }
 
-    fn update_left_side_panel(&mut self, ctx: &egui::Context) {
+    pub fn update_left_side_panel(&mut self, ctx: &egui::Context) {
         egui::SidePanel::left("side_panel")
             .min_width(250_f32)
             .show(ctx, |ui| {
@@ -132,7 +136,7 @@ impl TemplateApp {
             });
     }
 
-    fn update_central_panel(&mut self, ctx: &egui::Context) {
+    pub fn update_central_panel(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.record_editor_view(ui);
         });
@@ -219,7 +223,7 @@ impl TemplateApp {
     }
 
     // https://github.com/EmbarkStudios/puffin/blob/dafc2ff1755e5ed85c405f7240603f1af6c71c24/puffin_viewer/src/lib.rs#L239
-    fn ui_file_drag_and_drop(&mut self, ctx: &egui::Context) {
+    pub fn ui_file_drag_and_drop(&mut self, ctx: &egui::Context) {
         use egui::*;
 
         // Preview hovering files:
@@ -251,76 +255,5 @@ impl TemplateApp {
                 }
             }
         });
-    }
-}
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-impl eframe::App for TemplateApp {
-    /// Called by the frame work to save state before shutdown.
-    fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        // general storage save
-        eframe::set_value(storage, eframe::APP_KEY, self);
-    }
-
-    /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        // drag and drop
-        self.ui_file_drag_and_drop(ctx);
-
-        // scale
-        ctx.set_pixels_per_point(f32::from(self.scale));
-        // themes
-        catppuccin_egui::set_theme(ctx, get_theme(&self.theme));
-
-        // wasm open and save file
-        #[cfg(target_arch = "wasm32")]
-        self.process_open_file_result();
-
-        #[cfg(target_arch = "wasm32")]
-        self.process_save_file_result();
-
-        // Top Panel
-        self.update_top_panel(ctx, frame);
-
-        // bottom Panel
-        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-            // Status Bar
-            ui.horizontal(|ui| {
-                // Number of edited records
-                let mut status_edited = "Edited Records: ".to_owned();
-                if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
-                    status_edited = format!("Edited Records: {}", data.edited_records.len());
-                }
-                ui.label(status_edited);
-
-                // VERSION
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
-                    ui.label(VERSION);
-                    ui.label("Version: ");
-                    ui.separator();
-                    ui.hyperlink("https://github.com/rfuzzo/tes3edit");
-                });
-            });
-        });
-
-        // Side Panel
-        self.update_left_side_panel(ctx);
-
-        // Central Panel
-        self.update_central_panel(ctx);
-
-        // notifications
-        self.toasts.show(ctx);
-    }
-}
-
-fn get_theme(theme: &crate::app::ETheme) -> catppuccin_egui::Theme {
-    match theme {
-        crate::app::ETheme::Frappe => catppuccin_egui::FRAPPE,
-        crate::app::ETheme::Latte => catppuccin_egui::LATTE,
-        crate::app::ETheme::Macchiato => catppuccin_egui::MACCHIATO,
-        crate::app::ETheme::Mocha => catppuccin_egui::MOCHA,
     }
 }
