@@ -36,7 +36,12 @@ impl TemplateApp {
             egui::ComboBox::from_label("")
                 .selected_text(format!("{:?}", self.record_type))
                 .show_ui(ui, |ui| {
-                    for t in ERecordType::iter() {
+                    let tags = ERecordType::iter().collect::<Vec<_>>();
+                    for t in tags {
+                        // not allowed to create a header manually
+                        if t == ERecordType::TES3 {
+                            continue;
+                        }
                         ui.selectable_value(&mut self.record_type, t, t.to_string());
                     }
                 });
@@ -140,38 +145,39 @@ impl TemplateApp {
                 });
 
                 // context menu of tag header
-                tag_header.header_response.context_menu(|ui| {
-                    // add record button
-                    if ui.button("Add record").clicked() {
-                        if let Some(instance) = create_from_tag(&tag.clone()) {
-                            let new_id = get_unique_id(&instance);
-                            data.edited_records.insert(new_id.clone(), instance);
-                            data.clear_cache();
-                            data.selected_record_id = Some(new_id);
-                        } else {
-                            self.toasts.warning("Could not create record");
+                if tag != "TES3" {
+                    tag_header.header_response.context_menu(|ui| {
+                        // add record button
+                        if ui.button("Add record").clicked() {
+                            if let Some(instance) = create_from_tag(&tag.clone()) {
+                                let new_id = get_unique_id(&instance);
+                                data.edited_records.insert(new_id.clone(), instance);
+                                data.selected_record_id = Some(new_id);
+                            } else {
+                                self.toasts.warning("Could not create record");
+                            }
+
+                            ui.close_menu();
                         }
 
-                        ui.close_menu();
-                    }
+                        ui.separator();
 
-                    ui.separator();
-
-                    // delete all button
-                    if ui.button("Delete all").clicked() {
-                        for id in ids_by_tag.iter() {
-                            record_ids_to_delete.push(id.clone());
+                        // delete all button
+                        if ui.button("Delete all").clicked() {
+                            for id in ids_by_tag.iter() {
+                                record_ids_to_delete.push(id.clone());
+                            }
+                            ui.close_menu();
                         }
-                        ui.close_menu();
-                    }
-                });
+                    });
+                }
             }
 
             ui.allocate_space(ui.available_size()); // put this LAST in your panel/window code
         });
 
         // delete stuff
-        // TODO deleting actually removes
+        // TODO deleting actually removes, not undoable
         record_ids_to_delete.dedup();
         if !record_ids_to_delete.is_empty() {
             for k in record_ids_to_delete {
