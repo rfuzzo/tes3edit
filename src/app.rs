@@ -231,6 +231,8 @@ impl TemplateApp {
 
     /// Opens a modal window of specified state
     pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
+        // cleanup
+        self.compare_data = CompareData::default();
         // disable ui
         ui.set_enabled(!self.modal_open);
         self.modal_open = true;

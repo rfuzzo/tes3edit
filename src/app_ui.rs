@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use tes3::esp::Plugin;
 
-use crate::{get_theme, CompareData, EAppState, TemplateApp};
+use crate::{get_path_hash, get_theme, CompareData, EAppState, TemplateApp};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -117,8 +117,51 @@ impl TemplateApp {
     }
 
     /// Main compare view
-    pub(crate) fn update_compare_view(&self, _ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        todo!()
+    pub(crate) fn update_compare_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // ID list
+        egui::SidePanel::left("side_panel_compare")
+            .min_width(250_f32)
+            .show(ctx, |ui| {
+                ui.heading("Conflicts");
+                ui.separator();
+
+                // list of conflicting records
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for key in self.compare_data.conflicting_ids.iter() {
+                        let response =
+                            ui.add(egui::Label::new(key.clone()).sense(egui::Sense::click()));
+                        if response.clicked() {
+                            self.compare_data.selected_id = key.to_string();
+                        }
+                    }
+                });
+            });
+
+        // main compare view
+        egui::CentralPanel::default().show(ctx, |ui| {
+            let key = self.compare_data.selected_id.clone();
+            if key.is_empty() {
+                return;
+            }
+
+            ui.heading(key.clone());
+            ui.separator();
+
+            // main compare ui
+            if let Some(conflicts) = self.compare_data.map.get(&key) {
+                for hash in conflicts {
+                    if let Some(p) = self.compare_data.plugins.get(hash) {
+                        ui.horizontal(|ui| {
+                            ui.label(hash.to_string());
+                            // lookup mod name
+                            ui.label(p.path.file_name().unwrap().to_string_lossy());
+                        });
+                    }
+                }
+            }
+
+            // compare
+        });
     }
 
     /////////////////////////////////////////////////
@@ -127,6 +170,8 @@ impl TemplateApp {
     /// Returns the update modal compare of this [`TemplateApp`].
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn update_modal_compare(&mut self, ctx: &egui::Context) {
+        use crate::{generate_conflict_map, get_unique_id};
+
         egui::Window::new("Compare Plugins")
             .open(&mut self.modal_open)
             .show(ctx, |ui| {
@@ -141,7 +186,17 @@ impl TemplateApp {
                     });
                     ui.separator();
                     // plugin select view
-                    for vm in self.compare_data.plugins.iter_mut() {
+                    // TODO sort
+                    let mut keys = self
+                        .compare_data
+                        .plugins
+                        .iter()
+                        .map(|e| *e.0)
+                        .collect::<Vec<_>>();
+                    keys.sort();
+
+                    for hash in keys {
+                        let vm = self.compare_data.plugins.get_mut(&hash).unwrap();
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut vm.enabled, "");
                             ui.label(vm.path.file_name().unwrap().to_string_lossy());
@@ -151,7 +206,37 @@ impl TemplateApp {
                     if ui.button("OK").clicked() {
                         // go into compare mode
                         self.app_state = EAppState::Compare;
-                        // TODO leave?
+
+                        // calculate conflicts
+                        // load plugins into memory
+                        for (_hash, vm) in
+                            self.compare_data.plugins.iter_mut().filter(|e| e.1.enabled)
+                        {
+                            let path = vm.path.clone();
+                            if let Ok(plugin) = Plugin::from_path(&path) {
+                                vm.plugin = Some(plugin);
+                                vm.records = vm
+                                    .plugin
+                                    .as_ref()
+                                    .unwrap()
+                                    .objects
+                                    .iter()
+                                    .map(get_unique_id)
+                                    .collect::<Vec<_>>();
+                            }
+                        }
+                        let conflict_map = generate_conflict_map(&self.compare_data);
+                        self.compare_data.map = conflict_map;
+                        let mut keys = self
+                            .compare_data
+                            .map
+                            .keys()
+                            .map(|e| e.to_owned())
+                            .collect::<Vec<_>>();
+                        keys.sort();
+                        self.compare_data.conflicting_ids = keys;
+
+                        // TODO close modal window
                     }
                 } else {
                     open_compare_folder(&mut self.compare_data);
@@ -169,13 +254,19 @@ fn open_compare_folder(data: &mut CompareData) {
 
         data.path = Some(path.clone());
         // get plugins
-        data.plugins = crate::get_plugins_in_folder(&path, true)
+        let plugins = crate::get_plugins_in_folder(&path, true)
             .iter()
             .map(|e| crate::CompareItemViewModel {
+                id: get_path_hash(e),
                 path: e.to_path_buf(),
                 enabled: false,
+                plugin: None,
+                records: vec![],
             })
             .collect::<Vec<_>>();
+        for p in plugins {
+            data.plugins.insert(p.id, p);
+        }
     }
 }
 

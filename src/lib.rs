@@ -19,13 +19,64 @@ use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
 #[derive(Default)]
 pub struct CompareData {
     pub path: Option<PathBuf>,
-    pub plugins: Vec<CompareItemViewModel>,
+    pub plugins: HashMap<u64, CompareItemViewModel>,
+
+    // these must be in sync
+    pub map: HashMap<String, Vec<u64>>,
+    pub conflicting_ids: Vec<String>,
+
+    pub selected_id: String,
 }
 
 #[derive(Default)]
 pub struct CompareItemViewModel {
+    pub id: u64,
     pub path: PathBuf,
+
     pub enabled: bool,
+    /// The actual plugin in memory
+    pub plugin: Option<Plugin>,
+    /// A list of all records by unique id of that plugin
+    pub records: Vec<String>,
+}
+
+/// Gets a hash from a Pathbuf
+pub fn get_path_hash(e: &std::path::PathBuf) -> u64 {
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    std::hash::Hash::hash(e, &mut hasher);
+    std::hash::Hasher::finish(&hasher)
+}
+
+/// Slow conflict lookup between plugins
+pub fn generate_conflict_map(data: &CompareData) -> std::collections::HashMap<String, Vec<u64>> {
+    let mut conflict_map: HashMap<String, Vec<u64>> = HashMap::default();
+    // get conflicts
+    for (hash, base_mod) in data.plugins.iter().filter(|e| e.1.enabled) {
+        // go through mod1s records
+        for record_id in base_mod.records.iter() {
+            // now check each of the other mods
+            for (other_hash, other_mod) in data.plugins.iter().filter(|e| e.1.enabled) {
+                // don't check yourself
+                if hash == other_hash {
+                    continue;
+                }
+
+                // if any conflict found
+                if other_mod.records.contains(record_id) {
+                    // insert empty vector on first
+                    if !conflict_map.contains_key(record_id) {
+                        conflict_map.insert(record_id.clone(), vec![]);
+                    }
+
+                    // update map
+                    let mut v = conflict_map[record_id].clone();
+                    v.push(other_mod.id);
+                    conflict_map.insert(record_id.clone(), v);
+                }
+            }
+        }
+    }
+    conflict_map
 }
 
 /// App States

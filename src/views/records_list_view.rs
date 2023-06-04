@@ -89,8 +89,7 @@ impl TemplateApp {
                         }
 
                         // record list item view
-                        let w = egui::Label::new(label).sense(egui::Sense::click());
-                        let response = ui.add(w);
+                        let response = ui.add(egui::Label::new(label).sense(egui::Sense::click()));
                         // context menu
                         response.clone().context_menu(|ui| {
                             // copy id
