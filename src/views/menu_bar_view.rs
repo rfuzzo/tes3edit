@@ -6,7 +6,7 @@ use tes3::esp::Plugin;
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::{get_plugin_id, get_unique_id, save_patch, save_plugin};
-use crate::{EScale, ETheme, PluginMetadata, TemplateApp};
+use crate::{get_plugin_names, EModalState, EScale, ETheme, PluginMetadata, TemplateApp};
 
 impl TemplateApp {
     #[allow(unused_variables)] // for wasm
@@ -211,6 +211,19 @@ impl TemplateApp {
             #[cfg(not(target_arch = "wasm32"))]
             ui.checkbox(&mut self.overwrite, "Overwrite");
 
+            #[cfg(not(target_arch = "wasm32"))]
+            ui.separator();
+
+            #[cfg(not(target_arch = "wasm32"))]
+            if ui.button("Compare").clicked() {
+                if !self.plugins.is_empty() {
+                    self.toasts
+                        .warning("Please close all open plugins before entering compare mode");
+                } else {
+                    self.open_modal_window(ui, EModalState::ModalCompareInit);
+                }
+            }
+
             // theme button on right
             ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
                 // theme
@@ -228,35 +241,11 @@ impl TemplateApp {
         });
     }
 
-    /// Opens a plugin
-    #[cfg(not(target_arch = "wasm32"))]
-    fn open_file_native(&mut self) {
-        let file_option = rfd::FileDialog::new()
-            .add_filter("esp", &["esp"])
-            .add_filter("esm", &["esm"])
-            .add_filter("omwaddon", &["omwaddon"])
-            .set_directory(&self.last_directory)
-            .pick_file();
-
-        if let Some(path) = file_option {
-            if let Ok(plugin) = Plugin::from_path(&path) {
-                Self::open_plugin(self, Some(path), plugin);
-            }
-        }
-    }
-
-    /// maps the input pluginviewmodel vec as list of ids
-    fn get_plugin_names(map: &[PluginMetadata]) -> Vec<String> {
-        let mut plugins_sorted: Vec<String> = map.iter().map(|p| p.id.clone()).collect();
-        plugins_sorted.sort();
-        plugins_sorted
-    }
-
     /// the tab view with all open plugins
     pub fn tab_bar(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::ScrollArea::horizontal().show(ui, |ui| {
             ui.horizontal(|ui| {
-                let plugins_sorted = Self::get_plugin_names(&self.plugins);
+                let plugins_sorted = get_plugin_names(&self.plugins);
 
                 for key in plugins_sorted {
                     let name = Path::new(&key)

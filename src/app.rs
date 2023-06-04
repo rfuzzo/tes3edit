@@ -7,6 +7,9 @@ use egui_notify::Toasts;
 use tes3::esp::Plugin;
 
 use crate::get_unique_id;
+use crate::CompareData;
+use crate::EAppState;
+use crate::EModalState;
 use crate::ERecordType;
 use crate::EScale;
 use crate::ETheme;
@@ -32,22 +35,26 @@ pub struct TemplateApp {
     // runtime
     #[serde(skip)]
     pub current_plugin_id: String,
-
     #[serde(skip)]
     pub plugins: Vec<PluginMetadata>,
-
     #[serde(skip)]
     pub search_text: String,
-
     #[serde(skip)]
     pub record_type: ERecordType,
+
+    // compare
+    #[serde(skip)]
+    pub compare_data: CompareData,
 
     // ui
     #[serde(skip)]
     pub toasts: Toasts,
-
     #[serde(skip)]
-    window_open: bool,
+    pub app_state: EAppState,
+    #[serde(skip)]
+    pub modal_open: bool,
+    #[serde(skip)]
+    pub modal_state: EModalState,
 
     // https://github.com/ergrelet/resym/blob/e4d243eb9459211ade0c5bae16096712a0615b0b/resym/src/resym_app.rs
     /// Field used by wasm32 targets to store file information
@@ -64,6 +71,9 @@ pub struct TemplateApp {
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
+            // runtime data
+            compare_data: CompareData::default(),
+            // TODO refactor
             recent_plugins: vec![],
             last_directory: "/".into(),
             theme: ETheme::Frappe,
@@ -74,7 +84,9 @@ impl Default for TemplateApp {
             search_text: "".into(),
             record_type: ERecordType::MISC,
             toasts: Toasts::default(),
-            window_open: false,
+            app_state: EAppState::default(),
+            modal_state: EModalState::default(),
+            modal_open: false,
             #[cfg(target_arch = "wasm32")]
             open_file_data: Rc::new(RefCell::new(None)),
             #[cfg(target_arch = "wasm32")]
@@ -118,28 +130,6 @@ impl TemplateApp {
                 //self.last_directory = path.to_path_buf();
             }
         }
-    }
-
-    pub fn update_top_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            self.menu_bar_view(ui, frame);
-
-            self.tab_bar(ui, frame);
-        });
-    }
-
-    pub fn update_left_side_panel(&mut self, ctx: &egui::Context) {
-        egui::SidePanel::left("side_panel")
-            .min_width(250_f32)
-            .show(ctx, |ui| {
-                self.records_list_view(ui);
-            });
-    }
-
-    pub fn update_central_panel(&mut self, ctx: &egui::Context) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            self.record_editor_view(ui);
-        });
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -222,38 +212,29 @@ impl TemplateApp {
         }
     }
 
-    // https://github.com/EmbarkStudios/puffin/blob/dafc2ff1755e5ed85c405f7240603f1af6c71c24/puffin_viewer/src/lib.rs#L239
-    pub fn ui_file_drag_and_drop(&mut self, ctx: &egui::Context) {
-        use egui::*;
+    /// Opens a plugin
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn open_file_native(&mut self) {
+        let file_option = rfd::FileDialog::new()
+            .add_filter("esp", &["esp"])
+            .add_filter("esm", &["esm"])
+            .add_filter("omwaddon", &["omwaddon"])
+            .set_directory(&self.last_directory)
+            .pick_file();
 
-        // Preview hovering files:
-        if !ctx.input(|i| i.raw.hovered_files.is_empty()) {
-            let painter =
-                ctx.layer_painter(LayerId::new(Order::Foreground, Id::new("file_drop_target")));
-
-            let screen_rect = ctx.input(|i| i.screen_rect());
-            painter.rect_filled(screen_rect, 0.0, Color32::from_black_alpha(192));
-            painter.text(
-                screen_rect.center(),
-                Align2::CENTER_CENTER,
-                "Drop to open plugin",
-                TextStyle::Heading.resolve(&ctx.style()),
-                Color32::WHITE,
-            );
-        }
-
-        // Collect dropped files:
-        ctx.input(|i| {
-            if !i.raw.dropped_files.is_empty() {
-                for file in i.raw.dropped_files.iter() {
-                    if let Some(path) = &file.path {
-                        if let Ok(plugin) = Plugin::from_path(path) {
-                            Self::open_plugin(self, Some(path.to_path_buf()), plugin);
-                        }
-                        break;
-                    }
-                }
+        if let Some(path) = file_option {
+            if let Ok(plugin) = Plugin::from_path(&path) {
+                Self::open_plugin(self, Some(path), plugin);
             }
-        });
+        }
+    }
+
+    /// Opens a modal window of specified state
+    pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
+        // disable ui
+        ui.set_enabled(!self.modal_open);
+        self.modal_open = true;
+        // enter modal state
+        self.modal_state = modal;
     }
 }

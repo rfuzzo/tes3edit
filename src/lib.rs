@@ -16,13 +16,50 @@ use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
 use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
 
+#[derive(Default)]
+pub struct CompareData {
+    pub path: Option<PathBuf>,
+    pub plugins: Vec<CompareItemViewModel>,
+}
+
+#[derive(Default)]
+pub struct CompareItemViewModel {
+    pub path: PathBuf,
+    pub enabled: bool,
+}
+
+/// App States
+#[derive(Default, PartialEq, Debug)]
+pub enum EAppState {
+    #[default]
+    Main,
+    Compare,
+}
+
+/// Modal windows
+#[derive(Default, PartialEq, Debug)]
+pub enum EModalState {
+    #[default]
+    None,
+    ModalCompareInit,
+}
+
 /// Catpuccino themes
-#[derive(serde::Deserialize, serde::Serialize, PartialEq, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Debug)]
 pub enum ETheme {
     Frappe,
     Latte,
     Macchiato,
     Mocha,
+}
+
+pub fn get_theme(theme: &ETheme) -> catppuccin_egui::Theme {
+    match theme {
+        ETheme::Frappe => catppuccin_egui::FRAPPE,
+        ETheme::Latte => catppuccin_egui::LATTE,
+        ETheme::Macchiato => catppuccin_egui::MACCHIATO,
+        ETheme::Mocha => catppuccin_egui::MOCHA,
+    }
 }
 
 /// App scale
@@ -413,4 +450,40 @@ where
             false
         }
     }
+}
+
+/// maps the input pluginviewmodel vec as list of ids
+pub fn get_plugin_names(map: &[PluginMetadata]) -> Vec<String> {
+    let mut plugins_sorted: Vec<String> = map.iter().map(|p| p.id.clone()).collect();
+    plugins_sorted.sort();
+    plugins_sorted
+}
+
+/// Get all plugins (esp, omwaddon, omwscripts) in a folder
+pub fn get_plugins_in_folder<P>(path: &P, use_omw_plugins: bool) -> Vec<PathBuf>
+where
+    P: AsRef<Path>,
+{
+    // get all plugins
+    let mut results: Vec<PathBuf> = vec![];
+    if let Ok(plugins) = std::fs::read_dir(path) {
+        plugins.for_each(|p| {
+            if let Ok(file) = p {
+                let file_path = file.path();
+                if file_path.is_file() {
+                    if let Some(ext_os) = file_path.extension() {
+                        let ext = ext_os.to_ascii_lowercase();
+                        if ext == "esm"
+                            || ext == "esp"
+                            || (use_omw_plugins && ext == "omwaddon")
+                            || (use_omw_plugins && ext == "omwscripts")
+                        {
+                            results.push(file_path);
+                        }
+                    }
+                }
+            }
+        });
+    }
+    results
 }
