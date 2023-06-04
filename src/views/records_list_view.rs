@@ -68,9 +68,6 @@ impl TemplateApp {
 
                 // add headers and subitems
                 let tag_header = egui::CollapsingHeader::new(tag.clone()).show(ui, |ui| {
-                    // add records
-                    // sort
-
                     for id in ids_by_tag.iter() {
                         // annotations
                         let mut label = id.to_string();
@@ -91,8 +88,19 @@ impl TemplateApp {
                         let response = ui.add(w);
                         // context menu
                         response.clone().context_menu(|ui| {
+                            // copy id
+                            if ui.button("Copy ID").clicked() {
+                                ui.output_mut(|o| {
+                                    // unwrap is save here since we always preprend the fourcc to all ids
+                                    o.copied_text = id.clone().get(5..).unwrap().to_string();
+                                });
+                                ui.close_menu();
+                            }
+
+                            ui.separator();
+
+                            // delete a record
                             if ui.button("Delete").clicked() {
-                                // delete a record
                                 record_ids_to_delete.push(id.clone());
                                 ui.close_menu();
                             }
