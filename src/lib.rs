@@ -252,7 +252,7 @@ pub struct PluginMetadata {
     pub full_path: Option<PathBuf>,
     pub records: HashMap<String, TES3Object>,
     /// cached ids of all records and edited records of this plugin
-    pub cached_ids: Vec<String>,
+    pub cached_ids: HashMap<String, Vec<String>>,
     pub edited_records: HashMap<String, TES3Object>,
     pub selected_record_id: Option<String>,
 }
@@ -263,15 +263,19 @@ impl PluginMetadata {
             id,
             full_path,
             records: HashMap::default(),
-            cached_ids: vec![],
+            cached_ids: HashMap::default(),
             edited_records: HashMap::default(),
             selected_record_id: None,
         }
     }
 
+    pub fn clear_cache(&mut self) {
+        self.cached_ids.clear();
+    }
+
     /// Regenerates record id cache of this plugin
     pub fn regenerate_id_cache(&mut self, filter_text: &String) {
-        self.cached_ids.clear();
+        self.clear_cache();
 
         let mut ids = self
             .get_record_ids()
@@ -290,7 +294,20 @@ impl PluginMetadata {
                 .collect::<Vec<_>>();
         }
         ids.sort();
-        self.cached_ids = ids.iter().map(|e| e.to_string()).collect::<Vec<_>>();
+
+        // group by tag
+        let mut grouped = HashMap::default();
+        for tag in get_all_tags() {
+            let mut ids_by_tag = ids
+                .iter()
+                .filter(|p| p.split(',').collect::<Vec<_>>().first().unwrap() == &tag)
+                .map(|e| e.to_owned())
+                .collect::<Vec<_>>();
+            ids_by_tag.sort();
+            grouped.insert(tag, ids_by_tag);
+        }
+
+        self.cached_ids = grouped;
     }
 
     /// Returns the get records of this [`PluginMetadata`].

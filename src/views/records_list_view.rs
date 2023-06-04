@@ -45,7 +45,7 @@ impl TemplateApp {
                 if let Some(instance) = create(self.record_type) {
                     let new_id = get_unique_id(&instance);
                     data.edited_records.insert(new_id.clone(), instance);
-                    data.cached_ids.clear();
+                    data.clear_cache();
                     data.selected_record_id = Some(new_id);
                 }
             }
@@ -61,12 +61,7 @@ impl TemplateApp {
         egui::ScrollArea::vertical().show(ui, |ui| {
             // order by tags
             for tag in tags {
-                let ids_by_tag = data
-                    .cached_ids
-                    .iter()
-                    .filter(|p| p.split(',').collect::<Vec<_>>().first().unwrap() == &tag)
-                    .map(|e| e.to_owned())
-                    .collect::<Vec<_>>();
+                let ids_by_tag = data.cached_ids[&tag].clone();
                 if ids_by_tag.is_empty() {
                     continue;
                 }
@@ -143,7 +138,7 @@ impl TemplateApp {
                         if let Some(instance) = create_from_tag(&tag.clone()) {
                             let new_id = get_unique_id(&instance);
                             data.edited_records.insert(new_id.clone(), instance);
-                            data.cached_ids.clear();
+                            data.clear_cache();
                             data.selected_record_id = Some(new_id);
                         } else {
                             self.toasts.warning("Could not create record");
@@ -179,7 +174,7 @@ impl TemplateApp {
                     data.edited_records.remove(&k);
                 }
             }
-            data.cached_ids.clear();
+            data.clear_cache();
         }
 
         // clear cache
@@ -201,7 +196,7 @@ impl TemplateApp {
                     data.edited_records.insert(new_key, v);
                 }
             }
-            data.cached_ids.clear();
+            data.clear_cache();
         }
     }
 }

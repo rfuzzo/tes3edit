@@ -198,7 +198,7 @@ impl TemplateApp {
                 .find(|p| p.id == self.current_plugin_id)
             {
                 // clear old data
-                plugin_data.cached_ids.clear();
+                plugin_data.clear_cache();
                 plugin_data.edited_records.clear();
                 plugin_data.records.clear();
 
