@@ -149,15 +149,23 @@ impl TemplateApp {
 
             // main compare ui
             if let Some(conflicts) = self.compare_data.map.get(&key) {
-                for hash in conflicts {
-                    if let Some(p) = self.compare_data.plugins.get(hash) {
-                        ui.horizontal(|ui| {
-                            ui.label(hash.to_string());
-                            // lookup mod name
-                            ui.label(p.path.file_name().unwrap().to_string_lossy());
-                        });
-                    }
-                }
+                egui::ScrollArea::horizontal().show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        for hash in conflicts {
+                            let p = self
+                                .compare_data
+                                .plugins
+                                .iter()
+                                .find(|e| e.id == *hash)
+                                .unwrap();
+                            ui.horizontal(|ui| {
+                                ui.label(hash.to_string());
+                                // lookup mod name
+                                ui.label(p.path.file_name().unwrap().to_string_lossy());
+                            });
+                        }
+                    });
+                });
             }
 
             // compare
@@ -187,16 +195,7 @@ impl TemplateApp {
                     ui.separator();
                     // plugin select view
                     // TODO sort
-                    let mut keys = self
-                        .compare_data
-                        .plugins
-                        .iter()
-                        .map(|e| *e.0)
-                        .collect::<Vec<_>>();
-                    keys.sort();
-
-                    for hash in keys {
-                        let vm = self.compare_data.plugins.get_mut(&hash).unwrap();
+                    for vm in self.compare_data.plugins.iter_mut() {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut vm.enabled, "");
                             ui.label(vm.path.file_name().unwrap().to_string_lossy());
@@ -209,9 +208,7 @@ impl TemplateApp {
 
                         // calculate conflicts
                         // load plugins into memory
-                        for (_hash, vm) in
-                            self.compare_data.plugins.iter_mut().filter(|e| e.1.enabled)
-                        {
+                        for vm in self.compare_data.plugins.iter_mut().filter(|e| e.enabled) {
                             let path = vm.path.clone();
                             if let Ok(plugin) = Plugin::from_path(&path) {
                                 vm.plugin = Some(plugin);
@@ -265,7 +262,7 @@ fn open_compare_folder(data: &mut CompareData) {
             })
             .collect::<Vec<_>>();
         for p in plugins {
-            data.plugins.insert(p.id, p);
+            data.plugins.push(p);
         }
     }
 }

@@ -258,7 +258,6 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c3d9988084242ce2c5abfb05cdbd314772f7f0d"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -272,7 +271,6 @@ dependencies = [
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c3d9988084242ce2c5abfb05cdbd314772f7f0d"
 dependencies = [
  "quote",
  "syn 2.0.18",
@@ -777,7 +775,6 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c3d9988084242ce2c5abfb05cdbd314772f7f0d"
 dependencies = [
  "bitflags 2.3.1",
  "bstr",
@@ -797,7 +794,6 @@ dependencies = [
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c3d9988084242ce2c5abfb05cdbd314772f7f0d"
 dependencies = [
  "quote",
  "syn 2.0.18",
@@ -2079,7 +2075,6 @@ checksum = "fd1ba337640d60c3e96bc6f0638a939b9c9a7f2c316a1598c279828b3d1dc8c5"
 [[package]]
 name = "tes3"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c3d9988084242ce2c5abfb05cdbd314772f7f0d"
 dependencies = [
  "esp",
 ]

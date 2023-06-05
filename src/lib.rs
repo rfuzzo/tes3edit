@@ -19,7 +19,7 @@ use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
 #[derive(Default)]
 pub struct CompareData {
     pub path: Option<PathBuf>,
-    pub plugins: HashMap<u64, CompareItemViewModel>,
+    pub plugins: Vec<CompareItemViewModel>,
 
     // these must be in sync
     pub map: HashMap<String, Vec<u64>>,
@@ -51,13 +51,13 @@ pub fn get_path_hash(e: &std::path::PathBuf) -> u64 {
 pub fn generate_conflict_map(data: &CompareData) -> std::collections::HashMap<String, Vec<u64>> {
     let mut conflict_map: HashMap<String, Vec<u64>> = HashMap::default();
     // get conflicts
-    for (hash, base_mod) in data.plugins.iter().filter(|e| e.1.enabled) {
+    for base_mod in data.plugins.iter().filter(|e| e.enabled) {
         // go through mod1s records
         for record_id in base_mod.records.iter() {
             // now check each of the other mods
-            for (other_hash, other_mod) in data.plugins.iter().filter(|e| e.1.enabled) {
+            for other_mod in data.plugins.iter().filter(|e| e.enabled) {
                 // don't check yourself
-                if hash == other_hash {
+                if base_mod.id == other_mod.id {
                     continue;
                 }
 
