@@ -1,9 +1,9 @@
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
-use tes3::esp::Plugin;
+use tes3::esp::{editor::Editor, Plugin};
 
-use crate::{get_path_hash, get_theme, CompareData, EAppState, TemplateApp};
+use crate::{get_path_hash, get_theme, get_unique_id, CompareData, EAppState, TemplateApp};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -111,9 +111,6 @@ impl TemplateApp {
 
         // Central Panel
         self.update_central_panel(ctx);
-
-        // notifications
-        self.toasts.show(ctx);
     }
 
     /// Main compare view
@@ -151,18 +148,31 @@ impl TemplateApp {
             if let Some(conflicts) = self.compare_data.map.get(&key) {
                 egui::ScrollArea::horizontal().show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        for hash in conflicts {
-                            let p = self
+                        for mod_hash in conflicts {
+                            let vm = self
                                 .compare_data
                                 .plugins
-                                .iter()
-                                .find(|e| e.id == *hash)
+                                .iter_mut()
+                                .find(|e| e.id == *mod_hash)
                                 .unwrap();
-                            ui.horizontal(|ui| {
-                                ui.label(hash.to_string());
+                            let plugin = &mut vm.plugin;
+                            // record
+
+                            // record column
+                            ui.vertical(|ui| {
+                                //ui.label(hash.to_string());
                                 // lookup mod name
-                                ui.label(p.path.file_name().unwrap().to_string_lossy());
+                                ui.label(vm.path.file_name().unwrap().to_string_lossy());
+                                // editor
+                                let record = plugin
+                                    .objects
+                                    .iter_mut()
+                                    .find(|e| get_unique_id(e) == key)
+                                    .unwrap();
+                                record.add_editor(ui, Some(key.clone()));
                             });
+                            // end of column
+                            ui.separator();
                         }
                     });
                 });
@@ -178,7 +188,7 @@ impl TemplateApp {
     /// Returns the update modal compare of this [`TemplateApp`].
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn update_modal_compare(&mut self, ctx: &egui::Context) {
-        use crate::{generate_conflict_map, get_unique_id};
+        use crate::generate_conflict_map;
 
         egui::Window::new("Compare Plugins")
             .open(&mut self.modal_open)
@@ -193,9 +203,12 @@ impl TemplateApp {
                         }
                     });
                     ui.separator();
+
+                    let plugins = &mut self.compare_data.plugins;
+                    plugins.sort_by_key(|a| a.get_name());
+
                     // plugin select view
-                    // TODO sort
-                    for vm in self.compare_data.plugins.iter_mut() {
+                    for vm in plugins.iter_mut() {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut vm.enabled, "");
                             ui.label(vm.path.file_name().unwrap().to_string_lossy());
@@ -211,11 +224,9 @@ impl TemplateApp {
                         for vm in self.compare_data.plugins.iter_mut().filter(|e| e.enabled) {
                             let path = vm.path.clone();
                             if let Ok(plugin) = Plugin::from_path(&path) {
-                                vm.plugin = Some(plugin);
+                                vm.plugin = plugin;
                                 vm.records = vm
                                     .plugin
-                                    .as_ref()
-                                    .unwrap()
                                     .objects
                                     .iter()
                                     .map(get_unique_id)
@@ -234,6 +245,7 @@ impl TemplateApp {
                         self.compare_data.conflicting_ids = keys;
 
                         // TODO close modal window
+                        self.toasts.success("Loaded plugins");
                     }
                 } else {
                     open_compare_folder(&mut self.compare_data);
@@ -257,7 +269,7 @@ fn open_compare_folder(data: &mut CompareData) {
                 id: get_path_hash(e),
                 path: e.to_path_buf(),
                 enabled: false,
-                plugin: None,
+                plugin: Plugin { objects: vec![] }, //TODO dummy plugin
                 records: vec![],
             })
             .collect::<Vec<_>>();
@@ -290,5 +302,8 @@ impl eframe::App for TemplateApp {
                 EAppState::Compare => self.update_compare_view(ctx, frame),
             }
         }
+
+        // notifications
+        self.toasts.show(ctx);
     }
 }

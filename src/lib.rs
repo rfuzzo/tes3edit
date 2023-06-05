@@ -35,9 +35,15 @@ pub struct CompareItemViewModel {
 
     pub enabled: bool,
     /// The actual plugin in memory
-    pub plugin: Option<Plugin>,
+    pub plugin: Plugin,
     /// A list of all records by unique id of that plugin
     pub records: Vec<String>,
+}
+
+impl CompareItemViewModel {
+    pub fn get_name(&self) -> String {
+        self.path.file_name().unwrap().to_string_lossy().to_string()
+    }
 }
 
 /// Gets a hash from a Pathbuf
