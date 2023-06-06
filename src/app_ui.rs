@@ -1,13 +1,15 @@
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
-use tes3::esp::{editor::Editor, Plugin};
+use tes3::esp::Plugin;
 
 use crate::{get_path_hash, get_theme, get_unique_id, CompareData, EAppState, TemplateApp};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 impl TemplateApp {
+    // Ediror view
+
     pub fn update_top_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             self.menu_bar_view(ui, frame);
@@ -27,6 +29,28 @@ impl TemplateApp {
     pub fn update_central_panel(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
             self.record_editor_view(ui);
+        });
+    }
+
+    // Conflicts view
+
+    pub fn update_conflicts_top_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        egui::TopBottomPanel::top("top_panel_compare").show(ctx, |ui| {
+            self.conflict_menu_bar_view(ui, frame);
+        });
+    }
+
+    pub fn update_conflicts_left_side_panel(&mut self, ctx: &egui::Context) {
+        egui::SidePanel::left("side_panel_compare")
+            .min_width(250_f32)
+            .show(ctx, |ui| {
+                self.conflict_list_view(ui);
+            });
+    }
+
+    pub fn update_conflicts_central_panel(&mut self, ctx: &egui::Context) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            self.conflict_compare_view(ui);
         });
     }
 
@@ -114,72 +138,15 @@ impl TemplateApp {
     }
 
     /// Main compare view
-    pub(crate) fn update_compare_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // ID list
-        egui::SidePanel::left("side_panel_compare")
-            .min_width(250_f32)
-            .show(ctx, |ui| {
-                ui.heading("Conflicts");
-                ui.separator();
+    pub(crate) fn update_compare_view(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        // Top Panel
+        self.update_conflicts_top_panel(ctx, frame);
 
-                // list of conflicting records
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for key in self.compare_data.conflicting_ids.iter() {
-                        let response =
-                            ui.add(egui::Label::new(key.clone()).sense(egui::Sense::click()));
-                        if response.clicked() {
-                            self.compare_data.selected_id = key.to_string();
-                        }
-                    }
-                });
-            });
+        // Side Panel
+        self.update_conflicts_left_side_panel(ctx);
 
-        // main compare view
-        egui::CentralPanel::default().show(ctx, |ui| {
-            let key = self.compare_data.selected_id.clone();
-            if key.is_empty() {
-                return;
-            }
-
-            ui.heading(key.clone());
-            ui.separator();
-
-            // main compare ui
-            if let Some(conflicts) = self.compare_data.map.get(&key) {
-                egui::ScrollArea::horizontal().show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        for mod_hash in conflicts {
-                            let vm = self
-                                .compare_data
-                                .plugins
-                                .iter_mut()
-                                .find(|e| e.id == *mod_hash)
-                                .unwrap();
-                            let plugin = &mut vm.plugin;
-                            // record
-
-                            // record column
-                            ui.vertical(|ui| {
-                                //ui.label(hash.to_string());
-                                // lookup mod name
-                                ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                                // editor
-                                let record = plugin
-                                    .objects
-                                    .iter_mut()
-                                    .find(|e| get_unique_id(e) == key)
-                                    .unwrap();
-                                record.add_editor(ui, Some(key.clone()));
-                            });
-                            // end of column
-                            ui.separator();
-                        }
-                    });
-                });
-            }
-
-            // compare
-        });
+        // Central Panel
+        self.update_conflicts_central_panel(ctx);
     }
 
     /////////////////////////////////////////////////
@@ -269,7 +236,7 @@ fn open_compare_folder(data: &mut CompareData) {
                 id: get_path_hash(e),
                 path: e.to_path_buf(),
                 enabled: false,
-                plugin: Plugin { objects: vec![] }, //TODO dummy plugin
+                plugin: Plugin { objects: vec![] },
                 records: vec![],
             })
             .collect::<Vec<_>>();

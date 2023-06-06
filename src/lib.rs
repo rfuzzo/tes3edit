@@ -27,6 +27,15 @@ pub struct CompareData {
 
     pub selected_id: String,
 }
+impl CompareData {
+    fn clear(&mut self) {
+        self.path = None;
+        self.plugins.clear();
+        self.map.clear();
+        self.conflicting_ids.clear();
+        self.selected_id.clear();
+    }
+}
 
 #[derive(Default)]
 pub struct CompareItemViewModel {
@@ -389,7 +398,6 @@ impl PluginMetadata {
                 .map(|e| e.to_owned())
                 .collect::<Vec<_>>();
         }
-        ids.sort();
 
         // group by tag
         let mut grouped = HashMap::default();

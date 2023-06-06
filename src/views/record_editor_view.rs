@@ -34,13 +34,13 @@ impl TemplateApp {
                             .edited_records
                             .get_mut(current_record_id)
                             .unwrap()
-                            .add_editor(ui, None);
+                            .add_editor(ui, current_record_id.to_owned());
                     } else if plugin_data.records.contains_key(current_record_id) {
                         plugin_data
                             .records
                             .get_mut(current_record_id)
                             .unwrap()
-                            .add_editor(ui, None);
+                            .add_editor(ui, current_record_id.to_owned());
                     }
                 });
             }
