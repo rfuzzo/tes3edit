@@ -111,7 +111,7 @@ impl TemplateApp {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn process_save_file_result(&mut self) {
+    pub fn process_save_file_result(&mut self) {
         use std::path::Path;
 
         if let Some(file_name) = self.save_file_data.borrow_mut().take() {
@@ -133,7 +133,7 @@ impl TemplateApp {
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn process_open_file_result(&mut self) {
+    pub fn process_open_file_result(&mut self) {
         if let Some((name, plugin)) = self.open_file_data.borrow_mut().take() {
             let plugin_id = name;
             self.current_plugin_id = plugin_id.clone();

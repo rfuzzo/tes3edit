@@ -221,6 +221,7 @@ impl TemplateApp {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn open_compare_folder(data: &mut CompareData) {
     let folder_option = rfd::FileDialog::new().pick_folder();
     if let Some(path) = folder_option {
@@ -258,6 +259,7 @@ impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // modal windows
         if self.modal_open {
+            #[cfg(not(target_arch = "wasm32"))]
             match self.modal_state {
                 crate::EModalState::ModalCompareInit => self.update_modal_compare(ctx),
                 _ => panic!("ArgumentException"),
