@@ -230,6 +230,7 @@ impl TemplateApp {
     }
 
     /// Opens a modal window of specified state
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
         // cleanup
         self.compare_data = CompareData::default();
@@ -238,5 +239,35 @@ impl TemplateApp {
         self.modal_open = true;
         // enter modal state
         self.modal_state = modal;
+    }
+}
+
+impl eframe::App for TemplateApp {
+    /// Called by the frame work to save state before shutdown.
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        // general storage save
+        eframe::set_value(storage, eframe::APP_KEY, self);
+    }
+
+    /// Called each time the UI needs repainting, which may be many times per second.
+    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        // modal windows
+        if self.modal_open {
+            #[cfg(not(target_arch = "wasm32"))]
+            match self.modal_state {
+                crate::EModalState::ModalCompareInit => self.update_modal_compare(ctx),
+                _ => panic!("ArgumentException"),
+            }
+        } else {
+            // other main ui views
+            match self.app_state {
+                EAppState::Main => self.update_edit_view(ctx, frame),
+                EAppState::Compare => self.update_compare_view(ctx, frame),
+            }
+        }
+
+        // notifications
+        self.toasts.show(ctx);
     }
 }

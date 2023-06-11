@@ -5,8 +5,8 @@ use tes3::esp::Header;
 use tes3::esp::Plugin;
 
 #[cfg(not(target_arch = "wasm32"))]
-use crate::{get_plugin_id, get_unique_id, save_patch, save_plugin};
-use crate::{get_plugin_names, EModalState, EScale, ETheme, PluginMetadata, TemplateApp};
+use crate::{get_plugin_id, get_unique_id, save_patch, save_plugin, EModalState, PluginMetadata};
+use crate::{get_plugin_names, EScale, ETheme, TemplateApp};
 
 impl TemplateApp {
     #[allow(unused_variables)] // for wasm

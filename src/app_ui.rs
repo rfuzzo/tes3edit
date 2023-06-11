@@ -1,14 +1,13 @@
-#[cfg(target_arch = "wasm32")]
-use std::{cell::RefCell, rc::Rc};
-
 use tes3::esp::Plugin;
 
-use crate::{get_path_hash, get_theme, get_unique_id, CompareData, EAppState, TemplateApp};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::{get_path_hash, get_unique_id, CompareData};
+use crate::{get_theme, EAppState, TemplateApp};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 impl TemplateApp {
-    // Ediror view
+    // Editor view
 
     pub fn update_top_panel(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -244,35 +243,5 @@ fn open_compare_folder(data: &mut CompareData) {
         for p in plugins {
             data.plugins.push(p);
         }
-    }
-}
-
-impl eframe::App for TemplateApp {
-    /// Called by the frame work to save state before shutdown.
-    fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        // general storage save
-        eframe::set_value(storage, eframe::APP_KEY, self);
-    }
-
-    /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        // modal windows
-        if self.modal_open {
-            #[cfg(not(target_arch = "wasm32"))]
-            match self.modal_state {
-                crate::EModalState::ModalCompareInit => self.update_modal_compare(ctx),
-                _ => panic!("ArgumentException"),
-            }
-        } else {
-            // other main ui views
-            match self.app_state {
-                EAppState::Main => self.update_edit_view(ctx, frame),
-                EAppState::Compare => self.update_compare_view(ctx, frame),
-            }
-        }
-
-        // notifications
-        self.toasts.show(ctx);
     }
 }

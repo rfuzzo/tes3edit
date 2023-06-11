@@ -23,21 +23,16 @@ fn main() -> eframe::Result<()> {
 // when compiling to web using trunk.
 #[cfg(target_arch = "wasm32")]
 fn main() {
-    // Make sure panics are logged using `console.error`.
-    console_error_panic_hook::set_once();
-
-    // Redirect tracing to console.log and friends:
-    tracing_wasm::set_as_global_default();
+    use tes3edit::TemplateApp;
 
     let web_options = eframe::WebOptions::default();
-
     wasm_bindgen_futures::spawn_local(async {
         let runner = eframe::WebRunner::new();
         runner
             .start(
-                "tes3edit_canvas_id", // hardcode it
+                "tes3edit_web",
                 web_options,
-                Box::new(|cc| Box::new(tes3edit::TemplateApp::new(cc))),
+                Box::new(|_a| Box::<TemplateApp>::default()),
             )
             .await
             .expect("failed to start eframe");
