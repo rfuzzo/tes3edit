@@ -15,9 +15,28 @@ impl TemplateApp {
 
         // main compare ui
         if let Some(conflicts) = self.compare_data.map.get(&key) {
+            // horizontal scrolling
             egui::ScrollArea::horizontal().show(ui, |ui| {
-                ui.horizontal(|ui| {
+                // start grid
+                egui::Grid::new("some_unique_id").show(ui, |ui| {
+                    // first row: mod names
                     for mod_hash in conflicts {
+                        // variables
+                        let vm = self
+                            .compare_data
+                            .plugins
+                            .iter_mut()
+                            .find(|e| e.id == *mod_hash)
+                            .unwrap();
+                        // mod name
+                        ui.label(vm.path.file_name().unwrap().to_string_lossy());
+                        ui.separator();
+                    }
+                    ui.end_row();
+
+                    // second row: editor
+                    for mod_hash in conflicts {
+                        // variables
                         let vm = self
                             .compare_data
                             .plugins
@@ -25,13 +44,9 @@ impl TemplateApp {
                             .find(|e| e.id == *mod_hash)
                             .unwrap();
                         let plugin = &mut vm.plugin;
-
                         // record column
                         ui.push_id(format!("{}.{}.rc", mod_hash, key), |ui| {
                             ui.vertical(|ui| {
-                                // mod name
-                                ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                                // ui.separator(); // this breaks the ui for some reason
                                 // record editor
                                 egui::ScrollArea::vertical()
                                     .min_scrolled_height(600.0)
@@ -44,11 +59,9 @@ impl TemplateApp {
                                         record.add_editor(ui, format!("{}.{}", mod_hash, key));
                                     });
                             });
-
-                            // end of column
-                            ui.separator();
                         });
                     }
+                    ui.end_row();
                 });
             });
         }
