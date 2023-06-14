@@ -258,6 +258,7 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#e697dc31f330042ed7bfc0f5b1209dd9b7eb92c9"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -265,12 +266,13 @@ dependencies = [
  "encoding_rs",
  "hashbrown",
  "memchr",
- "smart-default 0.6.0",
+ "smart-default",
 ]
 
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#e697dc31f330042ed7bfc0f5b1209dd9b7eb92c9"
 dependencies = [
  "quote",
  "syn 2.0.18",
@@ -775,6 +777,7 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#e697dc31f330042ed7bfc0f5b1209dd9b7eb92c9"
 dependencies = [
  "bitflags 2.3.1",
  "bstr",
@@ -788,12 +791,13 @@ dependencies = [
  "hashbrown",
  "itoa",
  "rayon",
- "smart-default 0.7.1",
+ "smart-default",
 ]
 
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#e697dc31f330042ed7bfc0f5b1209dd9b7eb92c9"
 dependencies = [
  "quote",
  "syn 2.0.18",
@@ -1938,17 +1942,6 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
 name = "smart-default"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "133659a15339456eeeb07572eb02a91c91e9815e9cbc89566944d2c8d3efdbf6"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "smart-default"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0eb01866308440fc64d6c44d9e86c5cc17adfe33c4d6eed55da9145044d0ffc1"
@@ -2075,13 +2068,14 @@ checksum = "fd1ba337640d60c3e96bc6f0638a939b9c9a7f2c316a1598c279828b3d1dc8c5"
 [[package]]
 name = "tes3"
 version = "0.0.1"
+source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#e697dc31f330042ed7bfc0f5b1209dd9b7eb92c9"
 dependencies = [
  "esp",
 ]
 
 [[package]]
 name = "tes3edit"
-version = "1.1.0"
+version = "1.0.0-RC3"
 dependencies = [
  "catppuccin-egui",
  "console_error_panic_hook",

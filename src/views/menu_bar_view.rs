@@ -4,8 +4,10 @@ use std::path::Path;
 use tes3::esp::Header;
 use tes3::esp::Plugin;
 
+#[cfg(debug_assertions)]
+use crate::EModalState;
 #[cfg(not(target_arch = "wasm32"))]
-use crate::{get_plugin_id, get_unique_id, save_patch, save_plugin, EModalState, PluginMetadata};
+use crate::{get_plugin_id, get_unique_id, save_patch, save_plugin, PluginMetadata};
 use crate::{get_plugin_names, EScale, ETheme, TemplateApp};
 
 impl TemplateApp {
@@ -214,6 +216,7 @@ impl TemplateApp {
             #[cfg(not(target_arch = "wasm32"))]
             ui.separator();
 
+            #[cfg(debug_assertions)]
             #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Compare").clicked() {
                 if !self.plugins.is_empty() {
