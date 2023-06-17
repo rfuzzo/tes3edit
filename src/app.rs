@@ -235,11 +235,20 @@ impl TemplateApp {
     pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
         // cleanup
         self.compare_data = CompareData::default();
+
         // disable ui
-        ui.set_enabled(!self.modal_open);
+        ui.set_enabled(false);
         self.modal_open = true;
-        // enter modal state
         self.modal_state = modal;
+    }
+
+    /// Opens a modal window of specified state
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn close_modal_window(&mut self, ui: &mut egui::Ui) {
+        // enable ui
+        ui.set_enabled(true);
+        self.modal_open = false;
+        self.modal_state = EModalState::None;
     }
 }
 
