@@ -28,6 +28,7 @@ pub struct MapData {
     pub zoom: f32,
 
     pub selected_id: String,
+    pub hover_pos: (i32, i32),
 }
 impl MapData {
     fn clear(&mut self) {

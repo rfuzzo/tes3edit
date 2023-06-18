@@ -177,7 +177,24 @@ impl TemplateApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Map");
             ui.separator();
-            ui.label(format!("Selected Cell: {}", self.map_data.selected_id));
+            ui.horizontal(|ui| {
+                ui.label(format!("Selected Cell: {}", self.map_data.selected_id));
+                ui.label(format!(
+                    "Hover Position: {}, {}",
+                    self.map_data.hover_pos.0, self.map_data.hover_pos.1
+                ));
+                // get cell name
+                if let Some(cell) = self.map_data.cells.get(&self.map_data.hover_pos) {
+                    let mut name = cell.name.clone();
+                    if name.is_empty() {
+                        if let Some(region) = cell.region.clone() {
+                            name = region;
+                        }
+                    }
+                    ui.label(format!("Cell: {}", name));
+                }
+            });
+
             ui.separator();
 
             // painter

@@ -260,19 +260,24 @@ impl TemplateApp {
         self.modal_state = EModalState::None;
     }
 
-    pub(crate) fn paint(&self, painter: &egui::Painter) {
+    ///
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn paint(&mut self, painter: &egui::Painter) {
         let bounds = std::cmp::max(self.map_data.min.abs(), self.map_data.max.abs());
         let boundsf = bounds as f32;
 
-        let mut shapes: Vec<Shape> = Vec::new();
         let rect = painter.clip_rect();
         let to_screen = emath::RectTransform::from_to(
             Rect::from_min_max(Pos2::new(-boundsf, -boundsf), Pos2::new(boundsf, boundsf)),
             rect,
         );
+        let from_screen = emath::RectTransform::from_to(
+            rect,
+            Rect::from_min_max(Pos2::new(-boundsf, -boundsf), Pos2::new(boundsf, boundsf)),
+        );
 
         //draw rows
-
+        let mut shapes: Vec<Shape> = Vec::new();
         for x in -bounds..bounds {
             for y in -bounds..bounds {
                 let key = (x, -y); // draw upside down
@@ -301,9 +306,22 @@ impl TemplateApp {
                 shapes.push(rect_shape);
             }
         }
-
-        // paint
         painter.extend(shapes);
+
+        if let Some(hover_pos) = painter.ctx().pointer_hover_pos() {
+            let real_pos = from_screen * hover_pos;
+
+            let mut x = real_pos.x;
+            let mut y = -real_pos.y;
+            // hacks to get the correct cell name
+            if x < 0.0 {
+                x -= 1.0;
+            }
+            if y > 0.0 {
+                y += 1.0;
+            }
+            self.map_data.hover_pos = (x as i32, y as i32);
+        }
     }
 }
 
