@@ -67,7 +67,7 @@ impl TemplateApp {
                     keys.sort();
                     self.compare_data.conflicting_ids = keys;
 
-                    // TODO close modal window
+                    // close modal window
                     self.toasts.success("Loaded plugins");
                     self.close_modal_window(ui);
                 }

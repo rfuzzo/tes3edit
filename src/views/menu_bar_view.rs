@@ -227,6 +227,16 @@ impl TemplateApp {
                 }
             }
 
+            #[cfg(not(target_arch = "wasm32"))]
+            if ui.button("Map").clicked() {
+                if !self.plugins.is_empty() {
+                    self.toasts
+                        .warning("Please close all open plugins before entering compare mode");
+                } else {
+                    self.open_modal_window(ui, EModalState::MapInit);
+                }
+            }
+
             // theme button on right
             ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
                 // theme

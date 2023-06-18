@@ -14,7 +14,42 @@ pub use app::TemplateApp;
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
-use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
+use tes3::esp::{Cell, EditorId, Plugin, TES3Object, TypeInfo};
+
+#[derive(Default)]
+pub struct MapData {
+    pub path: Option<PathBuf>,
+    pub plugins: Vec<MapItemViewModel>,
+
+    pub cells: HashMap<(i32, i32), Cell>,
+    pub cell_ids: HashMap<String, (i32, i32)>,
+    pub min: i32,
+    pub max: i32,
+    pub zoom: f32,
+
+    pub selected_id: String,
+}
+impl MapData {
+    fn clear(&mut self) {
+        self.path = None;
+        self.plugins.clear();
+        self.cells.clear();
+    }
+}
+#[derive(Default)]
+pub struct MapItemViewModel {
+    pub id: u64,
+    pub path: PathBuf,
+
+    pub enabled: bool,
+    /// The actual plugin in memory
+    pub plugin: Plugin,
+}
+impl MapItemViewModel {
+    pub fn get_name(&self) -> String {
+        self.path.file_name().unwrap().to_string_lossy().to_string()
+    }
+}
 
 #[derive(Default)]
 pub struct CompareData {
@@ -36,7 +71,6 @@ impl CompareData {
         self.selected_id.clear();
     }
 }
-
 #[derive(Default)]
 pub struct CompareItemViewModel {
     pub id: u64,
@@ -48,7 +82,6 @@ pub struct CompareItemViewModel {
     /// A list of all records by unique id of that plugin
     pub records: Vec<String>,
 }
-
 impl CompareItemViewModel {
     pub fn get_name(&self) -> String {
         self.path.file_name().unwrap().to_string_lossy().to_string()
@@ -100,6 +133,7 @@ pub enum EAppState {
     #[default]
     Main,
     Compare,
+    Map,
 }
 
 /// Modal windows
@@ -108,6 +142,7 @@ pub enum EModalState {
     #[default]
     None,
     ModalCompareInit,
+    MapInit,
 }
 
 /// Catpuccino themes

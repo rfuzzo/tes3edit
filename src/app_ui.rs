@@ -1,3 +1,5 @@
+use egui::Painter;
+
 use tes3::esp::Plugin;
 
 use crate::{get_theme, TemplateApp};
@@ -99,7 +101,7 @@ impl TemplateApp {
     }
 
     /// Main compare view
-    pub(crate) fn update_compare_view(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    pub fn update_compare_view(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // Top Panel
         egui::TopBottomPanel::top("top_panel_compare").show(ctx, |ui| {
             self.conflict_menu_bar_view(ui, frame);
@@ -115,6 +117,78 @@ impl TemplateApp {
         // Central Panel
         egui::CentralPanel::default().show(ctx, |ui| {
             self.conflict_compare_view(ui);
+        });
+    }
+
+    /// Main map view
+    pub fn update_map_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Top Panel
+        egui::TopBottomPanel::top("top_panel_map").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                if ui.button("Exit").clicked() {
+                    // clean up compare data
+                    self.compare_data.clear();
+                    self.map_data.clear();
+                    // Exit
+                    self.app_state = crate::EAppState::Main;
+                }
+            });
+        });
+
+        // Side Panel
+        egui::SidePanel::left("side_panel_map")
+            .min_width(250_f32)
+            .show(ctx, |ui| {
+                // heading
+                ui.heading("Cells");
+                ui.separator();
+
+                // search bar
+                ui.horizontal(|ui| {
+                    ui.label("Filter: ");
+                    ui.text_edit_singleline(&mut self.search_text);
+                });
+                ui.separator();
+
+                // list of cells
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    let mut ids: Vec<&String> = self.map_data.cell_ids.keys().collect::<Vec<_>>();
+                    ids.sort();
+
+                    for key in ids.iter() {
+                        // TODO upper and lowercase search
+                        if !self.search_text.is_empty()
+                            && !key
+                                .to_lowercase()
+                                .contains(&self.search_text.to_lowercase())
+                        {
+                            continue;
+                        }
+                        let response =
+                            ui.add(egui::Label::new(&(*key).clone()).sense(egui::Sense::click()));
+                        if response.clicked() {
+                            self.map_data.selected_id = key.to_string();
+                        }
+                    }
+                });
+            });
+
+        // Central Panel
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.heading("Map");
+            ui.separator();
+            ui.label(format!("Selected Cell: {}", self.map_data.selected_id));
+            ui.separator();
+
+            // painter
+            let painter = Painter::new(
+                ui.ctx().clone(),
+                ui.layer_id(),
+                ui.available_rect_before_wrap(),
+            );
+            self.paint(&painter);
+            // Make sure we allocate what we used (everything)
+            ui.expand_to_include_rect(painter.clip_rect());
         });
     }
 }

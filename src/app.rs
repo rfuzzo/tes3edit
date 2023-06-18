@@ -2,6 +2,11 @@ use std::path::PathBuf;
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
+use egui::emath;
+use egui::Color32;
+use egui::Pos2;
+use egui::Rect;
+use egui::Shape;
 use egui_notify::Toasts;
 
 use tes3::esp::Plugin;
@@ -13,6 +18,7 @@ use crate::EModalState;
 use crate::ERecordType;
 use crate::EScale;
 use crate::ETheme;
+use crate::MapData;
 use crate::PluginMetadata;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -42,9 +48,10 @@ pub struct TemplateApp {
     #[serde(skip)]
     pub record_type: ERecordType,
 
-    // compare
     #[serde(skip)]
     pub compare_data: CompareData,
+    #[serde(skip)]
+    pub map_data: MapData,
 
     // ui
     #[serde(skip)]
@@ -73,6 +80,7 @@ impl Default for TemplateApp {
         Self {
             // runtime data
             compare_data: CompareData::default(),
+            map_data: MapData::default(),
             // TODO refactor
             recent_plugins: vec![],
             last_directory: "/".into(),
@@ -235,6 +243,7 @@ impl TemplateApp {
     pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
         // cleanup
         self.compare_data = CompareData::default();
+        self.map_data = MapData::default();
 
         // disable ui
         ui.set_enabled(false);
@@ -249,6 +258,52 @@ impl TemplateApp {
         ui.set_enabled(true);
         self.modal_open = false;
         self.modal_state = EModalState::None;
+    }
+
+    pub(crate) fn paint(&self, painter: &egui::Painter) {
+        let bounds = std::cmp::max(self.map_data.min.abs(), self.map_data.max.abs());
+        let boundsf = bounds as f32;
+
+        let mut shapes: Vec<Shape> = Vec::new();
+        let rect = painter.clip_rect();
+        let to_screen = emath::RectTransform::from_to(
+            Rect::from_min_max(Pos2::new(-boundsf, -boundsf), Pos2::new(boundsf, boundsf)),
+            rect,
+        );
+
+        //draw rows
+
+        for x in -bounds..bounds {
+            for y in -bounds..bounds {
+                let key = (x, -y); // draw upside down
+
+                let mut color = Color32::DARK_BLUE;
+                if self.map_data.cells.contains_key(&key) {
+                    let cell = self.map_data.cells.get(&key).unwrap();
+
+                    if let Some(map_color) = cell.map_color {
+                        color =
+                            Color32::from_rgb_additive(map_color[0], map_color[1], map_color[2]);
+                    } else {
+                        color = Color32::DARK_GREEN;
+                    }
+                }
+                if let Some(grid) = self.map_data.cell_ids.get(&self.map_data.selected_id) {
+                    if grid == &key {
+                        color = Color32::RED;
+                    }
+                }
+
+                let cell_pos = to_screen * Pos2::new(x as f32, y as f32);
+                let cell_pos2 = to_screen * Pos2::new((x as f32) + 1.0, (y as f32) + 1.0);
+                let cell_rect = egui::epaint::Rect::from_two_pos(cell_pos, cell_pos2);
+                let rect_shape = Shape::rect_filled(cell_rect, egui::Rounding::none(), color);
+                shapes.push(rect_shape);
+            }
+        }
+
+        // paint
+        painter.extend(shapes);
     }
 }
 
@@ -266,14 +321,16 @@ impl eframe::App for TemplateApp {
         if self.modal_open {
             #[cfg(not(target_arch = "wasm32"))]
             match self.modal_state {
-                crate::EModalState::ModalCompareInit => self.update_modal_compare(ctx),
-                _ => panic!("ArgumentException"),
+                EModalState::ModalCompareInit => self.update_modal_compare(ctx),
+                EModalState::MapInit => self.update_modal_map(ctx),
+                EModalState::None => panic!("ArgumentException"),
             }
         } else {
             // other main ui views
             match self.app_state {
                 EAppState::Main => self.update_edit_view(ctx, frame),
                 EAppState::Compare => self.update_compare_view(ctx, frame),
+                EAppState::Map => self.update_map_view(ctx, frame),
             }
         }
 
