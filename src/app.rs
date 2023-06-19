@@ -2,11 +2,6 @@ use std::path::PathBuf;
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
-use egui::emath;
-use egui::Color32;
-use egui::Pos2;
-use egui::Rect;
-use egui::Shape;
 use egui_notify::Toasts;
 
 use tes3::esp::Plugin;
@@ -258,70 +253,6 @@ impl TemplateApp {
         ui.set_enabled(true);
         self.modal_open = false;
         self.modal_state = EModalState::None;
-    }
-
-    ///
-    #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn paint(&mut self, painter: &egui::Painter) {
-        let bounds = std::cmp::max(self.map_data.min.abs(), self.map_data.max.abs());
-        let boundsf = bounds as f32;
-
-        let rect = painter.clip_rect();
-        let to_screen = emath::RectTransform::from_to(
-            Rect::from_min_max(Pos2::new(-boundsf, -boundsf), Pos2::new(boundsf, boundsf)),
-            rect,
-        );
-        let from_screen = emath::RectTransform::from_to(
-            rect,
-            Rect::from_min_max(Pos2::new(-boundsf, -boundsf), Pos2::new(boundsf, boundsf)),
-        );
-
-        //draw rows
-        let mut shapes: Vec<Shape> = Vec::new();
-        for x in -bounds..bounds {
-            for y in -bounds..bounds {
-                let key = (x, -y); // draw upside down
-
-                let mut color = Color32::DARK_BLUE;
-                if self.map_data.cells.contains_key(&key) {
-                    let cell = self.map_data.cells.get(&key).unwrap();
-
-                    if let Some(map_color) = cell.map_color {
-                        color =
-                            Color32::from_rgb_additive(map_color[0], map_color[1], map_color[2]);
-                    } else {
-                        color = Color32::DARK_GREEN;
-                    }
-                }
-                if let Some(grid) = self.map_data.cell_ids.get(&self.map_data.selected_id) {
-                    if grid == &key {
-                        color = Color32::RED;
-                    }
-                }
-
-                let cell_pos = to_screen * Pos2::new(x as f32, y as f32);
-                let cell_pos2 = to_screen * Pos2::new((x as f32) + 1.0, (y as f32) + 1.0);
-                let cell_rect = egui::epaint::Rect::from_two_pos(cell_pos, cell_pos2);
-                let rect_shape = Shape::rect_filled(cell_rect, egui::Rounding::none(), color);
-                shapes.push(rect_shape);
-            }
-        }
-        painter.extend(shapes);
-
-        if let Some(hover_pos) = painter.ctx().pointer_hover_pos() {
-            let real_pos = from_screen * hover_pos;
-
-            let mut x = real_pos.x;
-            let mut y = -real_pos.y;
-            // hacks to get the correct cell name
-            if x < 0.0 {
-                x -= 1.0;
-            }
-            if y > 0.0 {
-                y += 1.0;
-            }
-            self.map_data.hover_pos = (x as i32, y as i32);
-        }
     }
 }
 

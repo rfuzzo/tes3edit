@@ -1,5 +1,3 @@
-use egui::Painter;
-
 use tes3::esp::Plugin;
 
 use crate::{get_theme, TemplateApp};
@@ -175,37 +173,7 @@ impl TemplateApp {
 
         // Central Panel
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Map");
-            ui.separator();
-            ui.horizontal(|ui| {
-                ui.label(format!("Selected Cell: {}", self.map_data.selected_id));
-                ui.label(format!(
-                    "Hover Position: {}, {}",
-                    self.map_data.hover_pos.0, self.map_data.hover_pos.1
-                ));
-                // get cell name
-                if let Some(cell) = self.map_data.cells.get(&self.map_data.hover_pos) {
-                    let mut name = cell.name.clone();
-                    if name.is_empty() {
-                        if let Some(region) = cell.region.clone() {
-                            name = region;
-                        }
-                    }
-                    ui.label(format!("Cell: {}", name));
-                }
-            });
-
-            ui.separator();
-
-            // painter
-            let painter = Painter::new(
-                ui.ctx().clone(),
-                ui.layer_id(),
-                ui.available_rect_before_wrap(),
-            );
-            self.paint(&painter);
-            // Make sure we allocate what we used (everything)
-            ui.expand_to_include_rect(painter.clip_rect());
+            self.map_view(ui);
         });
     }
 }

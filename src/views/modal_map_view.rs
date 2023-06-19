@@ -9,7 +9,7 @@ impl TemplateApp {
     pub(crate) fn update_modal_map(&mut self, ctx: &egui::Context) {
         use std::collections::HashMap;
 
-        use tes3::esp::Plugin;
+        use tes3::esp::{Landscape, Plugin};
 
         use crate::{get_unique_id, EAppState};
 
@@ -45,28 +45,22 @@ impl TemplateApp {
 
                     // load plugins into memory
                     let mut cells: HashMap<(i32, i32), Cell> = HashMap::default();
-                    let mut ids: HashMap<String, (i32, i32)> = HashMap::default();
+                    let mut landscape: HashMap<(i32, i32), Landscape> = HashMap::default();
+                    let mut cell_id_map: HashMap<String, (i32, i32)> = HashMap::default();
+                    let mut land_id_map: HashMap<String, (i32, i32)> = HashMap::default();
+
                     for vm in self.map_data.plugins.iter_mut().filter(|e| e.enabled) {
                         let path = vm.path.clone();
 
                         if let Ok(plugin) = Plugin::from_path(&path) {
                             vm.plugin = plugin;
 
-                            let plugin_cells = vm
-                                .plugin
-                                .objects
-                                .iter()
-                                .filter(|p| is_cell(p))
-                                .collect::<Vec<_>>();
-                            for c in plugin_cells {
+                            for c in vm.plugin.objects.iter().filter(|p| is_cell(p)) {
                                 let id = get_unique_id(c);
-                                let cell = to_cell(c);
+                                let cell = Cell::try_from(c.to_owned()).unwrap();
                                 if cell.is_interior() {
                                     continue;
                                 }
-                                // if cell.map_color.is_none() {
-                                //     continue;
-                                // }
 
                                 let x = cell.data.grid.0;
                                 let y = cell.data.grid.1;
@@ -86,14 +80,27 @@ impl TemplateApp {
 
                                 // add cells
                                 cells.insert((x, y), cell);
-                                ids.insert(id, (x, y));
+                                cell_id_map.insert(id, (x, y));
+                            }
+
+                            for c in vm.plugin.objects.iter().filter(|p| is_landscape(p)) {
+                                let id = get_unique_id(c);
+                                let land = Landscape::try_from(c.to_owned()).unwrap();
+                                let x = land.grid.0;
+                                let y = land.grid.1;
+
+                                // add cells
+                                landscape.insert((x, y), land);
+                                land_id_map.insert(id, (x, y));
                             }
                         }
                     }
 
                     // get final list of cells
                     self.map_data.cells = cells;
-                    self.map_data.cell_ids = ids;
+                    self.map_data.landscape = landscape;
+                    self.map_data.cell_ids = cell_id_map;
+                    self.map_data.land_ids = land_id_map;
 
                     // close modal window
                     self.toasts.success("Loaded plugins");
@@ -106,14 +113,12 @@ impl TemplateApp {
     }
 }
 
-// TODO cloning
-fn to_cell(c: &tes3::esp::TES3Object) -> Cell {
-    let cell: Cell = Cell::try_from(c.to_owned()).unwrap();
-    cell
-}
-
 fn is_cell(p: &tes3::esp::TES3Object) -> bool {
     p.tag_str() == "CELL"
+}
+
+fn is_landscape(p: &tes3::esp::TES3Object) -> bool {
+    p.tag_str() == "LAND"
 }
 
 #[cfg(not(target_arch = "wasm32"))]

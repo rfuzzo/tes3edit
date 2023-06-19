@@ -14,7 +14,7 @@ pub use app::TemplateApp;
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
-use tes3::esp::{Cell, EditorId, Plugin, TES3Object, TypeInfo};
+use tes3::esp::{Cell, EditorId, Landscape, Plugin, TES3Object, TypeInfo};
 
 #[derive(Default)]
 pub struct MapData {
@@ -22,11 +22,14 @@ pub struct MapData {
     pub plugins: Vec<MapItemViewModel>,
 
     pub cells: HashMap<(i32, i32), Cell>,
+    pub landscape: HashMap<(i32, i32), Landscape>,
+    /// Map cell record ids to grid
     pub cell_ids: HashMap<String, (i32, i32)>,
+    /// Map landscape record ids to grid
+    pub land_ids: HashMap<String, (i32, i32)>,
+
     pub min: i32,
     pub max: i32,
-    pub zoom: f32,
-
     pub selected_id: String,
     pub hover_pos: (i32, i32),
 }
