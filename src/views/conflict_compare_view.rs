@@ -30,7 +30,7 @@ impl TemplateApp {
                             .unwrap();
                         // mod name
                         ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                        ui.separator();
+                        // ui.separator();
                     }
                     ui.end_row();
 

@@ -233,7 +233,6 @@ impl TemplateApp {
     }
 
     /// Opens a modal window of specified state
-    #[cfg(debug_assertions)]
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
         // cleanup
