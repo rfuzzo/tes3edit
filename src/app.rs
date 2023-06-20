@@ -253,6 +253,12 @@ impl TemplateApp {
         self.modal_open = false;
         self.modal_state = EModalState::None;
     }
+
+    pub(crate) fn options_ui(&mut self, ui: &mut egui::Ui) {
+        if ui.button("Refresh").clicked() {
+            self.map_data.refresh_requested = true;
+        }
+    }
 }
 
 impl eframe::App for TemplateApp {

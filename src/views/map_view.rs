@@ -1,9 +1,16 @@
+use egui::emath;
+use egui::emath::RectTransform;
+use egui::Painter;
+use egui::Pos2;
+use egui::Rect;
+
 use crate::MapData;
 use crate::TemplateApp;
 
 impl TemplateApp {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn map_view(&mut self, ui: &mut egui::Ui) {
+        // headers
         ui.heading("Map");
         ui.separator();
         ui.horizontal(|ui| {
@@ -22,116 +29,82 @@ impl TemplateApp {
                 }
                 ui.label(format!("Cell: {}", name));
             }
+            ui.label(format!("Height: {}", self.map_data.dbg_data));
         });
 
         ui.separator();
 
-        // painter
+        // //draw rows painter
         let painter = egui::Painter::new(
             ui.ctx().clone(),
             ui.layer_id(),
             ui.available_rect_before_wrap(),
         );
-        paint(&painter, &mut self.map_data);
+
+        // cache shapes
+        let s = self.map_data.shapes.is_none();
+        if s || self.map_data.refresh_requested {
+            let bounds = get_bounds(&self.map_data);
+            let (to_screen, _) = get_transforms(bounds, &painter);
+            if self.map_data.refresh_requested {
+                self.map_data.refresh_requested = false;
+            }
+
+            crate::generate_map(bounds, &mut self.map_data, to_screen);
+        }
+
+        // hover
+        if let Some(hover_pos) = painter.ctx().pointer_hover_pos() {
+            let (_, from_screen) = get_transforms(get_bounds(&self.map_data), &painter);
+            let real_pos = from_screen * hover_pos;
+
+            let mut x = real_pos.x;
+            let mut y = real_pos.y;
+            // hacks to get the correct cell name
+            if x < 0.0 {
+                x -= 1.0;
+            }
+            if y < 0.0 {
+                y -= 1.0;
+            }
+            self.map_data.hover_pos = (x as i32, y as i32);
+        }
+
+        paint(&painter, &self.map_data);
         // Make sure we allocate what we used (everything)
         ui.expand_to_include_rect(painter.clip_rect());
+
+        // settings
+        egui::Frame::popup(ui.style())
+            .stroke(egui::Stroke::NONE)
+            .show(ui, |ui| {
+                ui.set_max_width(270.0);
+                egui::CollapsingHeader::new("Settings").show(ui, |ui| self.options_ui(ui));
+            });
     }
 }
 
-///
 #[cfg(not(target_arch = "wasm32"))]
-pub fn paint(painter: &egui::Painter, map_data: &mut MapData) {
-    use egui::{emath, Color32, Pos2, Rect, Shape};
+pub fn paint(painter: &egui::Painter, map_data: &MapData) {
+    if let Some(shapes) = map_data.shapes.clone() {
+        painter.extend(shapes);
+    }
+}
 
-    let bounds = std::cmp::max(map_data.min.abs(), map_data.max.abs());
+fn get_transforms(bounds: i32, painter: &Painter) -> (RectTransform, RectTransform) {
     let boundsf = bounds as f32;
 
-    let rect = painter.clip_rect();
-    let to_screen = emath::RectTransform::from_to(
-        Rect::from_min_max(Pos2::new(-boundsf, -boundsf), Pos2::new(boundsf, boundsf)),
-        rect,
-    );
-    let from_screen = emath::RectTransform::from_to(
-        rect,
-        Rect::from_min_max(Pos2::new(-boundsf, -boundsf), Pos2::new(boundsf, boundsf)),
-    );
+    let min = Pos2::new(-boundsf, boundsf);
+    let max = Pos2::new(boundsf, -boundsf);
 
-    //draw rows
-    let mut shapes: Vec<Shape> = Vec::new();
-    for x in -bounds..bounds {
-        for y in -bounds..bounds {
-            let key = (x, -y); // draw upside down
+    let world = Rect::from_min_max(min, max);
+    let canvas = painter.clip_rect();
 
-            // get LAND record
-            if let Some(land) = map_data.landscape.get(&key) {
-                let heightmap = land.world_map_data.data.clone().to_vec();
-                // draw 9x9 grid
-                (0..9).for_each(|hx| {
-                    for hy in 0..9 {
-                        let mut color: Color32;
-                        let h = heightmap[hx][hy] as i32;
-                        if h < 1 {
-                            color = Color32::BLUE;
-                        } else if h < 64 {
-                            color = Color32::WHITE;
-                        } else if h < 128 {
-                            color = Color32::BROWN;
-                        } else if h < 192 {
-                            color = Color32::GREEN;
-                        } else if h < 254 {
-                            color = Color32::BLUE;
-                        } else {
-                            color = Color32::BLACK;
-                        }
-                        // cities
-                        if map_data.cells.contains_key(&key) {
-                            let cell = map_data.cells.get(&key).unwrap();
+    let to_screen = emath::RectTransform::from_to(world, canvas);
+    let from_screen = emath::RectTransform::from_to(canvas, world);
+    (to_screen, from_screen)
+}
 
-                            if let Some(map_color) = cell.map_color {
-                                color = Color32::from_rgb_additive(
-                                    map_color[0],
-                                    map_color[1],
-                                    map_color[2],
-                                );
-                            }
-                        }
-                        // selected
-                        // if let Some(grid) = map_data.cell_ids.get(&map_data.selected_id) {
-                        //     if grid == &key {
-                        //         color = Color32::RED;
-                        //     }
-                        // }
-
-                        let grid_scale = 1.0 / 9.0;
-                        let grid_x = (x as f32) + ((hx as f32) * grid_scale);
-                        let grid_y = (y as f32) + ((hy as f32) * grid_scale);
-
-                        let cell_pos = to_screen * Pos2::new(grid_x, grid_y);
-                        let cell_pos2 =
-                            to_screen * Pos2::new(grid_x + grid_scale, grid_y + grid_scale);
-                        let cell_rect = egui::epaint::Rect::from_two_pos(cell_pos, cell_pos2);
-                        let rect_shape =
-                            Shape::rect_filled(cell_rect, egui::Rounding::none(), color);
-                        shapes.push(rect_shape);
-                    }
-                });
-            }
-        }
-    }
-    painter.extend(shapes);
-
-    if let Some(hover_pos) = painter.ctx().pointer_hover_pos() {
-        let real_pos = from_screen * hover_pos;
-
-        let mut x = real_pos.x;
-        let mut y = -real_pos.y;
-        // hacks to get the correct cell name
-        if x < 0.0 {
-            x -= 1.0;
-        }
-        if y > 0.0 {
-            y += 1.0;
-        }
-        map_data.hover_pos = (x as i32, y as i32);
-    }
+fn get_bounds(map_data: &MapData) -> i32 {
+    std::cmp::max(map_data.min.abs(), map_data.max.abs())
 }

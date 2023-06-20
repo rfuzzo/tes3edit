@@ -32,6 +32,13 @@ pub struct MapData {
     pub max: i32,
     pub selected_id: String,
     pub hover_pos: (i32, i32),
+
+    // Debug
+    pub dbg_data: String,
+
+    // painter
+    pub refresh_requested: bool,
+    pub shapes: Option<Vec<egui::Shape>>,
 }
 impl MapData {
     fn clear(&mut self) {
@@ -590,4 +597,121 @@ where
         });
     }
     results
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn generate_map(bounds: i32, map_data: &mut MapData, to_screen: egui::emath::RectTransform) {
+    use egui::{Color32, Pos2, Shape};
+    #[derive(Default)]
+    struct MyColor {
+        pub r: f32,
+        pub g: f32,
+        pub b: f32,
+    }
+
+    let mut shapes = vec![];
+    for x in -bounds..bounds {
+        for y in -bounds..bounds {
+            let key = (x, y); // draw upside down
+
+            // get LAND record
+            if let Some(land) = map_data.landscape.get(&key) {
+                let heightmap = land.world_map_data.data.clone().to_vec();
+
+                // draw 9x9 grid
+                for hx in 0..9 {
+                    (0..9).for_each(|hy| {
+                        let mut color: Color32;
+
+                        // https://github.com/NullCascade/morrowind-mods/blob/master/User%20Interface%20Expansion/plugin_source/PatchWorldMap.cpp#L158
+                        let h = heightmap[hy][hx] as f32;
+
+                        let height_data = 16.0 * h;
+                        let mut clipped_data = height_data / 2048.0;
+                        clipped_data = (-1.0_f32).max(clipped_data.min(1.0)); // rust wtf
+
+                        let mut pixel_color: MyColor = MyColor::default();
+                        // Above ocean level.
+                        if height_data >= 0.0 {
+                            // Darker heightmap threshold.
+                            if clipped_data > 0.3 {
+                                let base = (clipped_data - 0.3) * 1.428;
+                                pixel_color.r = 34.0 - base * 29.0;
+                                pixel_color.g = 25.0 - base * 20.0;
+                                pixel_color.b = 17.0 - base * 12.0;
+                            }
+                            // Lighter heightmap threshold.
+                            else {
+                                let mut base = clipped_data * 8.0;
+                                if clipped_data > 0.1 {
+                                    base = clipped_data - 0.1 + 0.8;
+                                }
+                                pixel_color.r = 66.0 - base * 32.0;
+                                pixel_color.g = 48.0 - base * 23.0;
+                                pixel_color.b = 33.0 - base * 16.0;
+                            }
+                        }
+                        // Underwater, fade out towards the water color.
+                        else {
+                            pixel_color.r = 38.0 + clipped_data * 14.0;
+                            pixel_color.g = 56.0 + clipped_data * 20.0;
+                            pixel_color.b = 51.0 + clipped_data * 18.0;
+                        }
+
+                        color = Color32::from_rgb(
+                            pixel_color.r as u8,
+                            pixel_color.g as u8,
+                            pixel_color.b as u8,
+                        );
+
+                        // cities
+                        if map_data.cells.contains_key(&key) {
+                            if let Some(map_color) = map_data.cells.get(&key).unwrap().map_color {
+                                if hx == 0
+                                    || hx == 1
+                                    || hx == 7
+                                    || hx == 8
+                                    || hy == 0
+                                    || hy == 1
+                                    || hy == 7
+                                    || hy == 8
+                                {
+                                    color = Color32::from_rgb_additive(
+                                        map_color[0],
+                                        map_color[1],
+                                        map_color[2],
+                                    );
+                                }
+                            }
+                        }
+                        // selected
+                        // if let Some(grid) = map_data.cell_ids.get(&map_data.selected_id) {
+                        //     if grid == &key {
+                        //         color = Color32::RED;
+                        //     }
+
+                        //     // dbg
+                        //     map_data.dbg_data = heightmap[hx][hy].to_string();
+                        // }
+
+                        let world_grid_unit = 1.0 / 9.0;
+                        let world_x = (x as f32) + ((hx as f32) * world_grid_unit);
+                        let world_y = (y as f32) + ((hy as f32) * world_grid_unit);
+
+                        let canvas_pos_from = to_screen * Pos2::new(world_x, world_y);
+                        let canvas_pos_to = to_screen
+                            * Pos2::new(world_x + world_grid_unit, world_y + world_grid_unit);
+
+                        shapes.push(Shape::rect_filled(
+                            egui::epaint::Rect::from_two_pos(canvas_pos_from, canvas_pos_to),
+                            egui::Rounding::none(),
+                            color,
+                        ));
+                    });
+                }
+            }
+        }
+    }
+
+    map_data.shapes = Some(shapes);
 }
