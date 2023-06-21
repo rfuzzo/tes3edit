@@ -11,10 +11,13 @@ mod views;
 
 pub use app::TemplateApp;
 
+use egui::{Color32, ColorImage, TextureHandle};
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
 use tes3::esp::{Cell, EditorId, Landscape, Plugin, TES3Object, TypeInfo};
+
+static GRID: usize = 9;
 
 #[derive(Default)]
 pub struct MapData {
@@ -38,7 +41,8 @@ pub struct MapData {
 
     // painter
     pub refresh_requested: bool,
-    pub shapes: Option<Vec<egui::Shape>>,
+    //pub shapes: Option<Vec<egui::Shape>>,
+    pub texture_handle: Option<TextureHandle>,
 }
 impl MapData {
     fn clear(&mut self) {
@@ -600,8 +604,90 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn generate_map(bounds: i32, map_data: &mut MapData, to_screen: egui::emath::RectTransform) {
-    use egui::{Color32, Pos2, Shape};
+fn generate_map(
+    bounds: i32,
+    map_data: &mut MapData,
+    _to_screen: egui::emath::RectTransform,
+    ui: &mut egui::Ui,
+) {
+    // TODO use slice
+    let mut map: Vec<Color32> = vec![];
+    let n = ((bounds as usize * 2) + 1) * GRID;
+    for grid_y in 0..n {
+        for grid_x in (0..n).rev() {
+            // we can divide by grid to get the cell and subtract the bounds to get the cell coordinates
+            let x = (grid_x / GRID) as i32 - bounds;
+            let y = (grid_y / GRID) as i32 - bounds;
+
+            // get LAND record
+            let key = (x, y);
+            if let Some(land) = map_data.landscape.get(&key) {
+                // get remainder
+                let hx = grid_x % GRID;
+                let hy = grid_y % GRID;
+
+                let heightmap = land.world_map_data.data.clone().to_vec();
+                let mut color = get_map_color(heightmap[hy][hx] as f32);
+
+                // cities
+                if map_data.cells.contains_key(&key) {
+                    if let Some(map_color) = map_data.cells.get(&key).unwrap().map_color {
+                        if hx == 0
+                            || hx == 1
+                            || hx == 7
+                            || hx == 8
+                            || hy == 0
+                            || hy == 1
+                            || hy == 7
+                            || hy == 8
+                        {
+                            color = Color32::from_rgba_premultiplied(
+                                map_color[0],
+                                map_color[1],
+                                map_color[2],
+                                map_color[3],
+                            );
+                        }
+                    }
+                }
+
+                map.push(color);
+
+                // TODO selected
+                // if let Some(grid) = map_data.cell_ids.get(&map_data.selected_id) {
+                //     if grid == &key {
+                //         color = Color32::RED;
+                //     }
+
+                //     // dbg
+                //     map_data.dbg_data = heightmap[hx][hy].to_string();
+                // }
+            } else {
+                map.push(Color32::TRANSPARENT);
+            }
+        }
+    }
+
+    let mut pixels: Vec<u8> = vec![];
+    map.reverse();
+    for c in map {
+        pixels.push(c.r());
+        pixels.push(c.g());
+        pixels.push(c.b());
+        pixels.push(c.a());
+    }
+
+    let width = ((2 * bounds as usize) + 1) * GRID;
+    let height = width;
+    let size: [usize; 2] = [width, height];
+    let image = ColorImage::from_rgba_unmultiplied(size, &pixels);
+    let texture_handle: TextureHandle = ui.ctx().load_texture("map", image, Default::default());
+    map_data.texture_handle = Some(texture_handle);
+    //map_data.shapes = Some(shapes);
+}
+
+/// https://github.com/NullCascade/morrowind-mods/blob/master/User%20Interface%20Expansion/plugin_source/PatchWorldMap.cpp#L158
+fn get_map_color(h: f32) -> Color32 {
     #[derive(Default)]
     struct MyColor {
         pub r: f32,
@@ -609,109 +695,41 @@ fn generate_map(bounds: i32, map_data: &mut MapData, to_screen: egui::emath::Rec
         pub b: f32,
     }
 
-    let mut shapes = vec![];
-    for x in -bounds..bounds {
-        for y in -bounds..bounds {
-            let key = (x, y); // draw upside down
+    let height_data = 16.0 * h;
+    let mut clipped_data = height_data / 2048.0;
+    clipped_data = (-1.0_f32).max(clipped_data.min(1.0)); // rust wtf
 
-            // get LAND record
-            if let Some(land) = map_data.landscape.get(&key) {
-                let heightmap = land.world_map_data.data.clone().to_vec();
-
-                // draw 9x9 grid
-                for hx in 0..9 {
-                    (0..9).for_each(|hy| {
-                        let mut color: Color32;
-
-                        // https://github.com/NullCascade/morrowind-mods/blob/master/User%20Interface%20Expansion/plugin_source/PatchWorldMap.cpp#L158
-                        let h = heightmap[hy][hx] as f32;
-
-                        let height_data = 16.0 * h;
-                        let mut clipped_data = height_data / 2048.0;
-                        clipped_data = (-1.0_f32).max(clipped_data.min(1.0)); // rust wtf
-
-                        let mut pixel_color: MyColor = MyColor::default();
-                        // Above ocean level.
-                        if height_data >= 0.0 {
-                            // Darker heightmap threshold.
-                            if clipped_data > 0.3 {
-                                let base = (clipped_data - 0.3) * 1.428;
-                                pixel_color.r = 34.0 - base * 29.0;
-                                pixel_color.g = 25.0 - base * 20.0;
-                                pixel_color.b = 17.0 - base * 12.0;
-                            }
-                            // Lighter heightmap threshold.
-                            else {
-                                let mut base = clipped_data * 8.0;
-                                if clipped_data > 0.1 {
-                                    base = clipped_data - 0.1 + 0.8;
-                                }
-                                pixel_color.r = 66.0 - base * 32.0;
-                                pixel_color.g = 48.0 - base * 23.0;
-                                pixel_color.b = 33.0 - base * 16.0;
-                            }
-                        }
-                        // Underwater, fade out towards the water color.
-                        else {
-                            pixel_color.r = 38.0 + clipped_data * 14.0;
-                            pixel_color.g = 56.0 + clipped_data * 20.0;
-                            pixel_color.b = 51.0 + clipped_data * 18.0;
-                        }
-
-                        color = Color32::from_rgb(
-                            pixel_color.r as u8,
-                            pixel_color.g as u8,
-                            pixel_color.b as u8,
-                        );
-
-                        // cities
-                        if map_data.cells.contains_key(&key) {
-                            if let Some(map_color) = map_data.cells.get(&key).unwrap().map_color {
-                                if hx == 0
-                                    || hx == 1
-                                    || hx == 7
-                                    || hx == 8
-                                    || hy == 0
-                                    || hy == 1
-                                    || hy == 7
-                                    || hy == 8
-                                {
-                                    color = Color32::from_rgb_additive(
-                                        map_color[0],
-                                        map_color[1],
-                                        map_color[2],
-                                    );
-                                }
-                            }
-                        }
-                        // selected
-                        // if let Some(grid) = map_data.cell_ids.get(&map_data.selected_id) {
-                        //     if grid == &key {
-                        //         color = Color32::RED;
-                        //     }
-
-                        //     // dbg
-                        //     map_data.dbg_data = heightmap[hx][hy].to_string();
-                        // }
-
-                        let world_grid_unit = 1.0 / 9.0;
-                        let world_x = (x as f32) + ((hx as f32) * world_grid_unit);
-                        let world_y = (y as f32) + ((hy as f32) * world_grid_unit);
-
-                        let canvas_pos_from = to_screen * Pos2::new(world_x, world_y);
-                        let canvas_pos_to = to_screen
-                            * Pos2::new(world_x + world_grid_unit, world_y + world_grid_unit);
-
-                        shapes.push(Shape::rect_filled(
-                            egui::epaint::Rect::from_two_pos(canvas_pos_from, canvas_pos_to),
-                            egui::Rounding::none(),
-                            color,
-                        ));
-                    });
-                }
+    let mut pixel_color: MyColor = MyColor::default();
+    // Above ocean level.
+    if height_data >= 0.0 {
+        // Darker heightmap threshold.
+        if clipped_data > 0.3 {
+            let base = (clipped_data - 0.3) * 1.428;
+            pixel_color.r = 34.0 - base * 29.0;
+            pixel_color.g = 25.0 - base * 20.0;
+            pixel_color.b = 17.0 - base * 12.0;
+        }
+        // Lighter heightmap threshold.
+        else {
+            let mut base = clipped_data * 8.0;
+            if clipped_data > 0.1 {
+                base = clipped_data - 0.1 + 0.8;
             }
+            pixel_color.r = 66.0 - base * 32.0;
+            pixel_color.g = 48.0 - base * 23.0;
+            pixel_color.b = 33.0 - base * 16.0;
         }
     }
+    // Underwater, fade out towards the water color.
+    else {
+        pixel_color.r = 38.0 + clipped_data * 14.0;
+        pixel_color.g = 56.0 + clipped_data * 20.0;
+        pixel_color.b = 51.0 + clipped_data * 18.0;
+    }
 
-    map_data.shapes = Some(shapes);
+    Color32::from_rgb(
+        pixel_color.r as u8,
+        pixel_color.g as u8,
+        pixel_color.b as u8,
+    )
 }

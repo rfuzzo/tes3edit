@@ -42,7 +42,7 @@ impl TemplateApp {
         );
 
         // cache shapes
-        let s = self.map_data.shapes.is_none();
+        let s = self.map_data.texture_handle.is_none();
         if s || self.map_data.refresh_requested {
             let bounds = get_bounds(&self.map_data);
             let (to_screen, _) = get_transforms(bounds, &painter);
@@ -50,7 +50,7 @@ impl TemplateApp {
                 self.map_data.refresh_requested = false;
             }
 
-            crate::generate_map(bounds, &mut self.map_data, to_screen);
+            crate::generate_map(bounds, &mut self.map_data, to_screen, ui);
         }
 
         // hover
@@ -61,11 +61,15 @@ impl TemplateApp {
             let mut x = real_pos.x;
             let mut y = real_pos.y;
             // hacks to get the correct cell name
-            if x < 0.0 {
+            if x >= 0.0 {
+                x += 1.0;
+            } else {
                 x -= 1.0;
             }
             if y < 0.0 {
                 y -= 1.0;
+            } else {
+                y += 1.0;
             }
             self.map_data.hover_pos = (x as i32, y as i32);
         }
@@ -86,8 +90,18 @@ impl TemplateApp {
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn paint(painter: &egui::Painter, map_data: &MapData) {
-    if let Some(shapes) = map_data.shapes.clone() {
-        painter.extend(shapes);
+    // if let Some(shapes) = map_data.shapes.clone() {
+    //     painter.extend(shapes);
+    // }
+
+    use egui::{pos2, Color32};
+    if let Some(texture_handle) = map_data.texture_handle.clone() {
+        painter.image(
+            texture_handle.id(),
+            painter.clip_rect(),
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        )
     }
 }
 
