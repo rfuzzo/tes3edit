@@ -36,21 +36,11 @@ pub struct MapData {
     pub selected_id: String,
     pub hover_pos: (i32, i32),
 
-    // Debug
-    pub dbg_data: String,
-
     // painter
     pub refresh_requested: bool,
-    //pub shapes: Option<Vec<egui::Shape>>,
     pub texture_handle: Option<TextureHandle>,
 }
-impl MapData {
-    fn clear(&mut self) {
-        self.path = None;
-        self.plugins.clear();
-        self.cells.clear();
-    }
-}
+
 #[derive(Default)]
 pub struct MapItemViewModel {
     pub id: u64,
@@ -77,15 +67,7 @@ pub struct CompareData {
 
     pub selected_id: String,
 }
-impl CompareData {
-    fn clear(&mut self) {
-        self.path = None;
-        self.plugins.clear();
-        self.map.clear();
-        self.conflicting_ids.clear();
-        self.selected_id.clear();
-    }
-}
+
 #[derive(Default)]
 pub struct CompareItemViewModel {
     pub id: u64,

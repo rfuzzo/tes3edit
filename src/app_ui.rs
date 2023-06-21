@@ -121,17 +121,25 @@ impl TemplateApp {
     /// Main map view
     pub fn update_map_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Top Panel
+        let mut skip = false;
         egui::TopBottomPanel::top("top_panel_map").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
+                if self.map_data.refresh_requested {
+                    // exit
+                    self.open_modal_window(ui, crate::EModalState::MapInit);
+                    skip = true;
+                }
+
                 if ui.button("Exit").clicked() {
-                    // clean up compare data
-                    self.compare_data.clear();
-                    self.map_data.clear();
-                    // Exit
                     self.app_state = crate::EAppState::Main;
+                    skip = true;
                 }
             });
         });
+
+        if skip {
+            return;
+        }
 
         // Side Panel
         egui::SidePanel::left("side_panel_map")

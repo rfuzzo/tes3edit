@@ -5,10 +5,6 @@ impl TemplateApp {
         // Menu Bar
         egui::menu::bar(ui, |ui| {
             if ui.button("Exit").clicked() {
-                // clean up compare data
-                self.compare_data.clear();
-                self.map_data.clear();
-                // Exit
                 self.app_state = EAppState::Main;
             }
         });

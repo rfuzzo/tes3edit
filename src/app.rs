@@ -237,7 +237,9 @@ impl TemplateApp {
     pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
         // cleanup
         self.compare_data = CompareData::default();
+        let last_path = self.map_data.path.clone();
         self.map_data = MapData::default();
+        self.map_data.path = last_path;
 
         // disable ui
         ui.set_enabled(false);
@@ -254,6 +256,7 @@ impl TemplateApp {
         self.modal_state = EModalState::None;
     }
 
+    /// Settings popup menu
     pub(crate) fn options_ui(&mut self, ui: &mut egui::Ui) {
         if ui.button("Refresh").clicked() {
             self.map_data.refresh_requested = true;
