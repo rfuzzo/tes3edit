@@ -586,7 +586,7 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn generate_map(map_data: &mut MapData, _to_screen: egui::emath::RectTransform, ui: &mut egui::Ui) {
+fn generate_map(map_data: &mut MapData, ui: &mut egui::Ui) {
     // TODO use slice
     let mut map: Vec<Color32> = vec![];
     let height = ((map_data.bounds_y.0.unsigned_abs() as usize
