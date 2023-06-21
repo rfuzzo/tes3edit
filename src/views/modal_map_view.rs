@@ -65,17 +65,17 @@ impl TemplateApp {
                                 let x = cell.data.grid.0;
                                 let y = cell.data.grid.1;
 
-                                if x < self.map_data.min {
-                                    self.map_data.min = x;
+                                if x < self.map_data.bounds_x.0 {
+                                    self.map_data.bounds_x.0 = x;
                                 }
-                                if x > self.map_data.max {
-                                    self.map_data.max = x;
+                                if x > self.map_data.bounds_x.1 {
+                                    self.map_data.bounds_x.1 = x;
                                 }
-                                if y < self.map_data.min {
-                                    self.map_data.min = y;
+                                if y < self.map_data.bounds_y.0 {
+                                    self.map_data.bounds_y.0 = y;
                                 }
-                                if y > self.map_data.max {
-                                    self.map_data.max = y;
+                                if y > self.map_data.bounds_y.1 {
+                                    self.map_data.bounds_y.1 = y;
                                 }
 
                                 // add cells

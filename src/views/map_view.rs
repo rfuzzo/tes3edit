@@ -44,18 +44,17 @@ impl TemplateApp {
         // cache shapes
         let s = self.map_data.texture_handle.is_none();
         if s || self.map_data.refresh_requested {
-            let bounds = get_bounds(&self.map_data);
-            let (to_screen, _) = get_transforms(bounds, &painter);
+            let (to_screen, _) = get_transforms(&self.map_data, &painter);
             if self.map_data.refresh_requested {
                 self.map_data.refresh_requested = false;
             }
 
-            crate::generate_map(bounds, &mut self.map_data, to_screen, ui);
+            crate::generate_map(&mut self.map_data, to_screen, ui);
         }
 
         // hover
         if let Some(hover_pos) = painter.ctx().pointer_hover_pos() {
-            let (_, from_screen) = get_transforms(get_bounds(&self.map_data), &painter);
+            let (_, from_screen) = get_transforms(&self.map_data, &painter);
             let real_pos = from_screen * hover_pos;
 
             let mut x = real_pos.x;
@@ -63,16 +62,28 @@ impl TemplateApp {
             // hacks to get the correct cell name
             if x >= 0.0 {
                 x += 1.0;
-            } else {
-                x -= 1.0;
             }
-            if y < 0.0 {
-                y -= 1.0;
-            } else {
+            // else {
+            //     x -= 1.0;
+            // }
+            if y >= 0.0 {
                 y += 1.0;
             }
+            // else {
+            //     y -= 1.0;
+            // }
             self.map_data.hover_pos = (x as i32, y as i32);
         }
+
+        // TODO selected overlay
+        // if let Some(grid) = map_data.cell_ids.get(&map_data.selected_id) {
+        //     if grid == &key {
+        //         color = Color32::RED;
+        //     }
+
+        //     // dbg
+        //     map_data.dbg_data = heightmap[hx][hy].to_string();
+        // }
 
         paint(&painter, &self.map_data);
         // Make sure we allocate what we used (everything)
@@ -105,11 +116,9 @@ pub fn paint(painter: &egui::Painter, map_data: &MapData) {
     }
 }
 
-fn get_transforms(bounds: i32, painter: &Painter) -> (RectTransform, RectTransform) {
-    let boundsf = bounds as f32;
-
-    let min = Pos2::new(-boundsf, boundsf);
-    let max = Pos2::new(boundsf, -boundsf);
+fn get_transforms(data: &MapData, painter: &Painter) -> (RectTransform, RectTransform) {
+    let min = Pos2::new(data.bounds_x.0 as f32, data.bounds_y.1 as f32);
+    let max = Pos2::new(data.bounds_x.1 as f32, data.bounds_y.0 as f32);
 
     let world = Rect::from_min_max(min, max);
     let canvas = painter.clip_rect();
@@ -117,8 +126,4 @@ fn get_transforms(bounds: i32, painter: &Painter) -> (RectTransform, RectTransfo
     let to_screen = emath::RectTransform::from_to(world, canvas);
     let from_screen = emath::RectTransform::from_to(canvas, world);
     (to_screen, from_screen)
-}
-
-fn get_bounds(map_data: &MapData) -> i32 {
-    std::cmp::max(map_data.min.abs(), map_data.max.abs())
 }

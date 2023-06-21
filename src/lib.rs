@@ -31,8 +31,8 @@ pub struct MapData {
     /// Map landscape record ids to grid
     pub land_ids: HashMap<String, (i32, i32)>,
 
-    pub min: i32,
-    pub max: i32,
+    pub bounds_x: (i32, i32),
+    pub bounds_y: (i32, i32),
     pub selected_id: String,
     pub hover_pos: (i32, i32),
 
@@ -604,20 +604,23 @@ where
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn generate_map(
-    bounds: i32,
-    map_data: &mut MapData,
-    _to_screen: egui::emath::RectTransform,
-    ui: &mut egui::Ui,
-) {
+fn generate_map(map_data: &mut MapData, _to_screen: egui::emath::RectTransform, ui: &mut egui::Ui) {
     // TODO use slice
     let mut map: Vec<Color32> = vec![];
-    let n = ((bounds as usize * 2) + 1) * GRID;
-    for grid_y in 0..n {
-        for grid_x in (0..n).rev() {
+    let height = ((map_data.bounds_y.0.unsigned_abs() as usize
+        + map_data.bounds_y.1.unsigned_abs() as usize)
+        + 1)
+        * GRID;
+    let width = ((map_data.bounds_x.0.unsigned_abs() as usize
+        + map_data.bounds_x.1.unsigned_abs() as usize)
+        + 1)
+        * GRID;
+
+    for grid_y in 0..height {
+        for grid_x in (0..width).rev() {
             // we can divide by grid to get the cell and subtract the bounds to get the cell coordinates
-            let x = (grid_x / GRID) as i32 - bounds;
-            let y = (grid_y / GRID) as i32 - bounds;
+            let x = (grid_x / GRID) as i32 + map_data.bounds_x.0;
+            let y = (grid_y / GRID) as i32 + map_data.bounds_y.0;
 
             // get LAND record
             let key = (x, y);
@@ -633,12 +636,12 @@ fn generate_map(
                 if map_data.cells.contains_key(&key) {
                     if let Some(map_color) = map_data.cells.get(&key).unwrap().map_color {
                         if hx == 0
-                            || hx == 1
-                            || hx == 7
+                            // || hx == 1
+                            // || hx == 7
                             || hx == 8
                             || hy == 0
-                            || hy == 1
-                            || hy == 7
+                            // || hy == 1
+                            // || hy == 7
                             || hy == 8
                         {
                             color = Color32::from_rgba_premultiplied(
@@ -652,16 +655,6 @@ fn generate_map(
                 }
 
                 map.push(color);
-
-                // TODO selected
-                // if let Some(grid) = map_data.cell_ids.get(&map_data.selected_id) {
-                //     if grid == &key {
-                //         color = Color32::RED;
-                //     }
-
-                //     // dbg
-                //     map_data.dbg_data = heightmap[hx][hy].to_string();
-                // }
             } else {
                 map.push(Color32::TRANSPARENT);
             }
@@ -677,13 +670,10 @@ fn generate_map(
         pixels.push(c.a());
     }
 
-    let width = ((2 * bounds as usize) + 1) * GRID;
-    let height = width;
     let size: [usize; 2] = [width, height];
-    let image = ColorImage::from_rgba_unmultiplied(size, &pixels);
+    let image = ColorImage::from_rgba_premultiplied(size, &pixels);
     let texture_handle: TextureHandle = ui.ctx().load_texture("map", image, Default::default());
     map_data.texture_handle = Some(texture_handle);
-    //map_data.shapes = Some(shapes);
 }
 
 /// https://github.com/NullCascade/morrowind-mods/blob/master/User%20Interface%20Expansion/plugin_source/PatchWorldMap.cpp#L158
