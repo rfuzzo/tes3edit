@@ -1,11 +1,9 @@
 use std::path::Path;
 
-#[cfg(not(target_arch = "wasm32"))]
 use tes3::esp::Header;
 use tes3::esp::Plugin;
 
 use crate::EModalState;
-#[cfg(not(target_arch = "wasm32"))]
 use crate::{get_plugin_id, get_unique_id, save_patch, save_plugin, PluginMetadata};
 use crate::{get_plugin_names, EScale, ETheme, TemplateApp};
 
@@ -15,10 +13,8 @@ impl TemplateApp {
         // Menu Bar
         egui::menu::bar(ui, |ui| {
             // File Menu
-            #[cfg(not(target_arch = "wasm32"))]
             ui.menu_button("File", |ui| {
                 // New plugin
-                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("New").clicked() {
                     // insert new
                     let plugin = Plugin::new();
@@ -131,7 +127,6 @@ impl TemplateApp {
             });
 
             // Open button
-            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Open File").clicked() {
                 self.open_file_native();
             }
@@ -182,7 +177,6 @@ impl TemplateApp {
                 });
             }
 
-            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save Patch").clicked() {
                 if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
                     if let Some(path) = &data.full_path {
@@ -194,7 +188,6 @@ impl TemplateApp {
                 }
             }
 
-            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Save").clicked() {
                 // get current plugin
                 if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
@@ -209,13 +202,10 @@ impl TemplateApp {
 
             ui.separator();
 
-            #[cfg(not(target_arch = "wasm32"))]
             ui.checkbox(&mut self.overwrite, "Overwrite");
 
-            #[cfg(not(target_arch = "wasm32"))]
             ui.separator();
 
-            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Compare").clicked() {
                 if !self.plugins.is_empty() {
                     self.toasts
@@ -225,7 +215,6 @@ impl TemplateApp {
                 }
             }
 
-            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("Map").clicked() {
                 if !self.plugins.is_empty() {
                     self.toasts

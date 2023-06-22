@@ -21,7 +21,7 @@ static GRID: usize = 9;
 
 #[derive(Default)]
 pub struct MapData {
-    pub path: Option<PathBuf>,
+    pub path: PathBuf,
     pub plugins: Vec<MapItemViewModel>,
 
     pub cells: HashMap<(i32, i32), Cell>,
@@ -58,7 +58,7 @@ impl MapItemViewModel {
 
 #[derive(Default)]
 pub struct CompareData {
-    pub path: Option<PathBuf>,
+    pub path: PathBuf,
     pub plugins: Vec<CompareItemViewModel>,
 
     // these must be in sync
@@ -585,7 +585,6 @@ where
     results
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn generate_map(map_data: &mut MapData, ui: &mut egui::Ui) {
     // TODO use slice
     let mut map: Vec<Color32> = vec![];

@@ -1,43 +1,55 @@
-use crate::CompareData;
-use crate::TemplateApp;
+use std::{env, path::PathBuf};
+
+use tes3::esp::Plugin;
+
+use crate::{
+    generate_conflict_map, get_path_hash, get_unique_id, CompareData, EAppState, TemplateApp,
+};
 
 impl TemplateApp {
     /////////////////////////////////////////////////
     // Modal views
 
     /// Returns the update modal compare of this [`TemplateApp`].
-    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn update_modal_compare(&mut self, ctx: &egui::Context) {
-        use tes3::esp::Plugin;
-
-        use crate::{generate_conflict_map, get_unique_id, EAppState};
-
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Plugins to compare");
-            ui.separator();
+            // Logic
+            if !self.compare_data.path.exists() {
+                if let Ok(cwd) = env::current_dir() {
+                    self.compare_data.path = cwd;
+                } else {
+                    self.compare_data.path = PathBuf::from("");
+                }
+            }
+            if self.compare_data.plugins.is_empty() {
+                populate_plugins(&mut self.compare_data);
+            }
 
             // Main view
-            // a folder to chose
-            if let Some(in_path) = self.compare_data.path.clone() {
-                ui.horizontal(|ui| {
-                    ui.label(in_path.display().to_string());
-                    if ui.button("...").clicked() {
-                        open_compare_folder(&mut self.compare_data);
-                    }
-                });
-                ui.separator();
-
-                let plugins = &mut self.compare_data.plugins;
-                plugins.sort_by_key(|a| a.get_name());
-
-                // plugin select view
-                for vm in plugins.iter_mut() {
-                    ui.horizontal(|ui| {
-                        ui.checkbox(&mut vm.enabled, "");
-                        ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                    });
+            ui.heading("Plugins to compare");
+            ui.separator();
+            // Header
+            ui.horizontal(|ui| {
+                ui.label(self.compare_data.path.display().to_string());
+                if ui.button("...").clicked() {
+                    open_compare_folder(&mut self.compare_data);
                 }
-                ui.separator();
+            });
+            ui.separator();
+
+            // plugin select view
+            let plugins = &mut self.compare_data.plugins;
+            plugins.sort_by_key(|a| a.get_name());
+            for vm in plugins.iter_mut() {
+                ui.horizontal(|ui| {
+                    ui.checkbox(&mut vm.enabled, "");
+                    ui.label(vm.path.file_name().unwrap().to_string_lossy());
+                });
+            }
+            ui.separator();
+
+            // Buttons
+            ui.horizontal(|ui| {
                 if ui.button("OK").clicked() {
                     // go into compare mode
                     self.app_state = EAppState::Compare;
@@ -71,39 +83,42 @@ impl TemplateApp {
                     self.toasts.success("Loaded plugins");
                     self.close_modal_window(ui);
                 }
-            } else {
-                open_compare_folder(&mut self.compare_data);
-            }
+
+                if ui.button("Cancel").clicked() {
+                    self.close_modal_window(ui);
+                }
+            });
         });
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 fn open_compare_folder(data: &mut CompareData) {
-    use tes3::esp::Plugin;
-
-    use crate::get_path_hash;
-
     let folder_option = rfd::FileDialog::new().pick_folder();
     if let Some(path) = folder_option {
         if !path.is_dir() {
             return;
         }
 
-        data.path = Some(path.clone());
-        // get plugins
-        let plugins = crate::get_plugins_in_folder(&path, true)
-            .iter()
-            .map(|e| crate::CompareItemViewModel {
-                id: get_path_hash(e),
-                path: e.to_path_buf(),
-                enabled: false,
-                plugin: Plugin { objects: vec![] },
-                records: vec![],
-            })
-            .collect::<Vec<_>>();
-        for p in plugins {
-            data.plugins.push(p);
-        }
+        data.path = path;
+        populate_plugins(data);
+    }
+}
+
+fn populate_plugins(data: &mut CompareData) {
+    // get plugins
+    let plugins = crate::get_plugins_in_folder(&data.path, true)
+        .iter()
+        .map(|e| crate::CompareItemViewModel {
+            id: get_path_hash(e),
+            path: e.to_path_buf(),
+            enabled: false,
+            plugin: Plugin { objects: vec![] },
+            records: vec![],
+        })
+        .collect::<Vec<_>>();
+
+    data.plugins.clear();
+    for p in plugins {
+        data.plugins.push(p);
     }
 }

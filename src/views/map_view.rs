@@ -1,20 +1,14 @@
-use egui::emath;
-use egui::emath::RectTransform;
-use egui::Painter;
-use egui::Pos2;
-use egui::Rect;
+use egui::{
+    emath::{self, RectTransform},
+    pos2, Color32, Painter, Pos2, Rect, Shape, Stroke,
+};
+use tes3::esp::TES3Object;
 
-use crate::MapData;
-use crate::TemplateApp;
+use crate::{MapData, TemplateApp};
 
 impl TemplateApp {
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn map_view(&mut self, ui: &mut egui::Ui) {
         // headers
-
-        use egui::{Color32, Shape, Stroke};
-        use tes3::esp::TES3Object;
-
         use crate::get_unique_id;
         ui.heading("Map");
         ui.separator();
@@ -125,9 +119,7 @@ impl TemplateApp {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
 pub fn paint(painter: &egui::Painter, map_data: &MapData) {
-    use egui::{pos2, Color32};
     if let Some(texture_handle) = map_data.texture_handle.clone() {
         painter.image(
             texture_handle.id(),

@@ -216,7 +216,6 @@ impl TemplateApp {
     }
 
     /// Opens a plugin
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn open_file_native(&mut self) {
         let file_option = rfd::FileDialog::new()
             .add_filter("esp", &["esp"])
@@ -233,7 +232,6 @@ impl TemplateApp {
     }
 
     /// Opens a modal window of specified state
-    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
         // cleanup
         self.compare_data = CompareData::default();
@@ -248,7 +246,6 @@ impl TemplateApp {
     }
 
     /// Opens a modal window of specified state
-    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn close_modal_window(&mut self, ui: &mut egui::Ui) {
         // enable ui
         ui.set_enabled(true);
@@ -276,7 +273,6 @@ impl eframe::App for TemplateApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // modal windows
         if self.modal_open {
-            #[cfg(not(target_arch = "wasm32"))]
             match self.modal_state {
                 EModalState::ModalCompareInit => self.update_modal_compare(ctx),
                 EModalState::MapInit => self.update_modal_map(ctx),
