@@ -258,6 +258,9 @@ impl TemplateApp {
         if ui.button("Refresh").clicked() {
             self.map_data.refresh_requested = true;
         }
+
+        ui.checkbox(&mut self.map_data.overlay_conflicts, "Show conflicts");
+        ui.checkbox(&mut self.map_data.tooltip_names, "Show tooltips");
     }
 }
 

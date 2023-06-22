@@ -23,11 +23,14 @@ static GRID: usize = 9;
 pub struct MapData {
     pub path: PathBuf,
     pub plugins: Vec<MapItemViewModel>,
+    pub plugin_hashes: HashMap<u64, String>,
 
     pub cells: HashMap<(i32, i32), Cell>,
-    pub landscape: HashMap<(i32, i32), Landscape>,
     /// Map cell record ids to grid
     pub cell_ids: HashMap<String, (i32, i32)>,
+    pub cell_conflicts: HashMap<(i32, i32), Vec<u64>>,
+
+    pub landscape: HashMap<(i32, i32), Landscape>,
     /// Map landscape record ids to grid
     pub land_ids: HashMap<String, (i32, i32)>,
 
@@ -39,6 +42,9 @@ pub struct MapData {
     // painter
     pub refresh_requested: bool,
     pub texture_handle: Option<TextureHandle>,
+    pub tooltip_names: bool,
+    pub overlay_conflicts: bool,
+    pub overlay_region: bool,
 }
 
 #[derive(Default)]
@@ -703,4 +709,17 @@ fn get_map_color(h: f32) -> Color32 {
         pixel_color.g as u8,
         pixel_color.b as u8,
     )
+}
+
+pub fn get_cell_name(map_data: &MapData, pos: (i32, i32)) -> String {
+    let mut name = "".to_owned();
+    if let Some(cell) = map_data.cells.get(&pos) {
+        name = cell.name.clone();
+        if name.is_empty() {
+            if let Some(region) = cell.region.clone() {
+                name = region;
+            }
+        }
+    }
+    format!("{} ({},{})", name, pos.0, pos.1)
 }

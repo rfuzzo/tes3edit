@@ -1,8 +1,15 @@
-use std::{collections::HashMap, env, path::PathBuf};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    env,
+    path::PathBuf,
+};
 
 use tes3::esp::{Cell, Landscape, Plugin, TypeInfo};
 
-use crate::{get_path_hash, get_unique_id, EAppState, MapData, MapItemViewModel, TemplateApp};
+use crate::{
+    get_path_hash, get_plugins_in_folder, get_unique_id, EAppState, MapData, MapItemViewModel,
+    TemplateApp,
+};
 
 impl TemplateApp {
     pub(crate) fn update_modal_map(&mut self, ctx: &egui::Context) {
@@ -50,58 +57,67 @@ impl TemplateApp {
 
                     // load plugins into memory
                     let mut cells: HashMap<(i32, i32), Cell> = HashMap::default();
-                    let mut landscape: HashMap<(i32, i32), Landscape> = HashMap::default();
                     let mut cell_id_map: HashMap<String, (i32, i32)> = HashMap::default();
+                    let mut cell_conflicts: HashMap<(i32, i32), Vec<u64>> = HashMap::default();
+
+                    let mut landscape: HashMap<(i32, i32), Landscape> = HashMap::default();
                     let mut land_id_map: HashMap<String, (i32, i32)> = HashMap::default();
 
                     for vm in self.map_data.plugins.iter_mut().filter(|e| e.enabled) {
-                        let path = vm.path.clone();
-
-                        if let Ok(plugin) = Plugin::from_path(&path) {
-                            vm.plugin = plugin;
-
-                            for c in vm.plugin.objects.iter().filter(|p| is_cell(p)) {
-                                let id = get_unique_id(c);
-                                let cell = Cell::try_from(c.to_owned()).unwrap();
-                                if cell.is_interior() {
-                                    continue;
-                                }
-
-                                let x = cell.data.grid.0;
-                                let y = cell.data.grid.1;
-
-                                if x < self.map_data.bounds_x.0 {
-                                    self.map_data.bounds_x.0 = x;
-                                }
-                                if x > self.map_data.bounds_x.1 {
-                                    self.map_data.bounds_x.1 = x;
-                                }
-                                if y < self.map_data.bounds_y.0 {
-                                    self.map_data.bounds_y.0 = y;
-                                }
-                                if y > self.map_data.bounds_y.1 {
-                                    self.map_data.bounds_y.1 = y;
-                                }
-
-                                // add cells
-                                cells.insert((x, y), cell);
-                                cell_id_map.insert(id, (x, y));
+                        // add cells
+                        for c in vm.plugin.objects.iter().filter(|p| is_cell(p)) {
+                            let id = get_unique_id(c);
+                            let cell = Cell::try_from(c.to_owned()).unwrap();
+                            if cell.is_interior() {
+                                continue;
                             }
 
-                            for c in vm.plugin.objects.iter().filter(|p| is_landscape(p)) {
-                                let id = get_unique_id(c);
-                                let land = Landscape::try_from(c.to_owned()).unwrap();
-                                let x = land.grid.0;
-                                let y = land.grid.1;
+                            let x = cell.data.grid.0;
+                            let y = cell.data.grid.1;
 
-                                // add cells
-                                landscape.insert((x, y), land);
-                                land_id_map.insert(id, (x, y));
+                            if x < self.map_data.bounds_x.0 {
+                                self.map_data.bounds_x.0 = x;
                             }
+                            if x > self.map_data.bounds_x.1 {
+                                self.map_data.bounds_x.1 = x;
+                            }
+                            if y < self.map_data.bounds_y.0 {
+                                self.map_data.bounds_y.0 = y;
+                            }
+                            if y > self.map_data.bounds_y.1 {
+                                self.map_data.bounds_y.1 = y;
+                            }
+
+                            // add cells
+                            let key = (x, y);
+                            if let Entry::Vacant(e) = cell_conflicts.entry(key) {
+                                e.insert(vec![vm.id]);
+                            } else {
+                                let mut value = cell_conflicts.get(&key).unwrap().to_owned();
+                                value.push(vm.id);
+                                cell_conflicts.insert(key, value);
+                            }
+
+                            cells.insert(key, cell);
+                            cell_id_map.insert(id, key);
+                        }
+
+                        // add landscape
+                        for c in vm.plugin.objects.iter().filter(|p| is_landscape(p)) {
+                            let id = get_unique_id(c);
+                            let land = Landscape::try_from(c.to_owned()).unwrap();
+                            let key = (land.grid.0, land.grid.1);
+
+                            // add landscape
+                            landscape.insert(key, land);
+                            land_id_map.insert(id, key);
                         }
                     }
 
                     // get final list of cells
+                    for (k, v) in cell_conflicts.iter().filter(|p| p.1.len() > 1) {
+                        self.map_data.cell_conflicts.insert(*k, v.to_vec());
+                    }
                     self.map_data.cells = cells;
                     self.map_data.landscape = landscape;
                     self.map_data.cell_ids = cell_id_map;
@@ -140,19 +156,34 @@ fn open_compare_folder(data: &mut MapData) {
 }
 
 fn populate_plugins(data: &mut MapData) {
-    // get plugins
-    let plugins = crate::get_plugins_in_folder(&data.path, true)
-        .iter()
-        .map(|e| MapItemViewModel {
-            id: get_path_hash(e),
-            path: e.to_path_buf(),
-            enabled: false,
-            plugin: Plugin { objects: vec![] },
-        })
-        .collect::<Vec<_>>();
-
     data.plugins.clear();
-    for p in plugins {
-        data.plugins.push(p);
+    data.plugin_hashes.clear();
+
+    for p in get_plugins_in_folder(&data.path, true) {
+        if let Ok(plugin) = Plugin::from_path(&p) {
+            let has_cells = !plugin
+                .objects
+                .iter()
+                .filter(|p| is_cell(p))
+                .filter(|p| {
+                    let r = *p;
+                    let cell = Cell::try_from(r.clone()).unwrap();
+                    !cell.is_interior()
+                })
+                .collect::<Vec<_>>()
+                .is_empty();
+
+            let hash = get_path_hash(&p);
+            if has_cells {
+                data.plugins.push(MapItemViewModel {
+                    id: hash,
+                    path: p.to_path_buf(),
+                    enabled: false,
+                    plugin,
+                });
+            }
+            data.plugin_hashes
+                .insert(hash, p.file_name().unwrap().to_str().unwrap().to_owned());
+        }
     }
 }

@@ -1,6 +1,6 @@
 use tes3::esp::Plugin;
 
-use crate::{get_theme, TemplateApp};
+use crate::{get_cell_name, get_theme, TemplateApp};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -178,6 +178,23 @@ impl TemplateApp {
                     }
                 });
             });
+
+        // footer
+        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            // Status Bar
+            ui.horizontal(|ui| {
+                // map bounds
+                ui.label(format!(
+                    "({},{}) - ({},{})",
+                    self.map_data.bounds_x.0,
+                    self.map_data.bounds_y.0,
+                    self.map_data.bounds_x.1,
+                    self.map_data.bounds_y.1
+                ));
+                ui.separator();
+                ui.label(get_cell_name(&self.map_data, self.map_data.hover_pos));
+            });
+        });
 
         // Central Panel
         egui::CentralPanel::default().show(ctx, |ui| {
