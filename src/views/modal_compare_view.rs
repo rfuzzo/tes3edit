@@ -38,9 +38,22 @@ impl TemplateApp {
             ui.separator();
 
             // plugin select view
-            let plugins = &mut self.compare_data.plugins;
-            plugins.sort_by_key(|a| a.get_name());
-            for vm in plugins.iter_mut() {
+            if !self.compare_data.plugins.is_empty() {
+                ui.horizontal(|ui| {
+                    if ui.button("Select all").clicked() {
+                        for vm in self.compare_data.plugins.iter_mut() {
+                            vm.enabled = true;
+                        }
+                    }
+                    if ui.button("Select none").clicked() {
+                        for vm in self.compare_data.plugins.iter_mut() {
+                            vm.enabled = false;
+                        }
+                    }
+                });
+            }
+
+            for vm in self.compare_data.plugins.iter_mut() {
                 ui.horizontal(|ui| {
                     ui.checkbox(&mut vm.enabled, "");
                     ui.label(vm.path.file_name().unwrap().to_string_lossy());
@@ -57,8 +70,7 @@ impl TemplateApp {
                     // calculate conflicts
                     // load plugins into memory
                     for vm in self.compare_data.plugins.iter_mut().filter(|e| e.enabled) {
-                        let path = vm.path.clone();
-                        if let Ok(plugin) = Plugin::from_path(&path) {
+                        if let Ok(plugin) = Plugin::from_path(&vm.path.clone()) {
                             vm.plugin = plugin;
                             vm.records = vm
                                 .plugin
@@ -68,6 +80,7 @@ impl TemplateApp {
                                 .collect::<Vec<_>>();
                         }
                     }
+
                     let conflict_map = generate_conflict_map(&self.compare_data);
                     self.compare_data.map = conflict_map;
                     let mut keys = self
@@ -105,6 +118,8 @@ fn open_compare_folder(data: &mut CompareData) {
 }
 
 fn populate_plugins(data: &mut CompareData) {
+    data.plugins.clear();
+
     // get plugins
     let plugins = crate::get_plugins_in_folder(&data.path, true)
         .iter()
@@ -117,8 +132,9 @@ fn populate_plugins(data: &mut CompareData) {
         })
         .collect::<Vec<_>>();
 
-    data.plugins.clear();
     for p in plugins {
         data.plugins.push(p);
     }
+
+    data.plugins.sort_by_key(|a| a.get_name());
 }

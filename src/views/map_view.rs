@@ -46,7 +46,7 @@ impl TemplateApp {
                             ui.label("Conflicts:");
                             for hash in conflicts {
                                 if let Some(name) = self.map_data.plugin_hashes.get(hash) {
-                                    ui.label(name);
+                                    ui.label(format!("- {}", name));
                                 }
                             }
                         });
@@ -86,6 +86,69 @@ impl TemplateApp {
         paint(&painter, &self.map_data);
 
         // draw overlays
+        // regions
+        if self.map_data.overlay_region {
+            let mut region_shapes: Vec<Shape> = vec![];
+
+            // if self.map_data.region_shapes.is_empty() {
+            for x in self.map_data.bounds_x.0..self.map_data.bounds_x.1 {
+                for y in self.map_data.bounds_y.0..self.map_data.bounds_y.1 {
+                    // get region
+                    let key = (x, y);
+                    if let Some(cell) = self.map_data.cells.get(&key) {
+                        if let Some(region_name) = cell.region.clone() {
+                            if let Some(region) = self.map_data.regions.get(&region_name) {
+                                let region_color = Color32::from_rgb(
+                                    region.map_color[0],
+                                    region.map_color[1],
+                                    region.map_color[2],
+                                );
+
+                                let p00 = self.world_to_abs_pos(key);
+                                let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
+
+                                let (to_screen, _) = get_transforms(&self.map_data, &painter);
+                                let rect = Rect::from_min_max(to_screen * p00, to_screen * p11);
+                                let shape =
+                                    Shape::rect_filled(rect, Rounding::none(), region_color);
+                                region_shapes.push(shape);
+                            }
+                        }
+                    }
+                }
+            }
+            //}
+
+            painter.extend(region_shapes.clone());
+        }
+        // cities
+        let mut city_shapes: Vec<Shape> = vec![];
+        // if self.map_data.city_shapes.is_empty() {
+        for x in self.map_data.bounds_x.0..self.map_data.bounds_x.1 {
+            for y in self.map_data.bounds_y.0..self.map_data.bounds_y.1 {
+                // get region
+                let key = (x, y);
+                if let Some(cell) = self.map_data.cells.get(&key) {
+                    if let Some(map_color) = cell.map_color {
+                        let color = Color32::from_rgb(map_color[0], map_color[1], map_color[2]);
+
+                        let p00 = self.world_to_abs_pos(key);
+                        // let p01 = Pos2::new(p00.x + 1.0, p00.y);
+                        // let p10 = Pos2::new(p00.x, p00.y + 1.0);
+                        let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
+
+                        let (to_screen, _) = get_transforms(&self.map_data, &painter);
+                        let rect = Rect::from_min_max(to_screen * p00, to_screen * p11);
+                        let shape =
+                            Shape::rect_stroke(rect, Rounding::none(), Stroke::new(2.0, color));
+                        city_shapes.push(shape);
+                    }
+                }
+            }
+        }
+        // }
+        painter.extend(city_shapes.clone());
+
         // conflicts
         if self.map_data.overlay_conflicts {
             for (cx, cy) in self.map_data.cell_conflicts.keys() {

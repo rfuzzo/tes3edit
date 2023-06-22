@@ -259,7 +259,10 @@ impl TemplateApp {
             self.map_data.refresh_requested = true;
         }
 
+        ui.separator();
+        ui.label("Overlays");
         ui.checkbox(&mut self.map_data.overlay_conflicts, "Show conflicts");
+        ui.checkbox(&mut self.map_data.overlay_region, "Show regions");
         ui.checkbox(&mut self.map_data.tooltip_names, "Show tooltips");
     }
 }

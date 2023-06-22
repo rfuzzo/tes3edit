@@ -170,6 +170,13 @@ impl TemplateApp {
                         {
                             continue;
                         }
+
+                        if self.map_data.selected_id == key.to_string() {
+                            ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
+                        } else {
+                            ui.visuals_mut().override_text_color = None;
+                        }
+
                         let response =
                             ui.add(egui::Label::new(&(*key).clone()).sense(egui::Sense::click()));
                         if response.clicked() {

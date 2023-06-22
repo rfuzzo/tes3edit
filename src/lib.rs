@@ -15,7 +15,7 @@ use egui::{Color32, ColorImage, TextureHandle};
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
-use tes3::esp::{Cell, EditorId, Landscape, Plugin, TES3Object, TypeInfo};
+use tes3::esp::{Cell, EditorId, Landscape, Plugin, Region, TES3Object, TypeInfo};
 
 static GRID: usize = 9;
 
@@ -24,6 +24,8 @@ pub struct MapData {
     pub path: PathBuf,
     pub plugins: Vec<MapItemViewModel>,
     pub plugin_hashes: HashMap<u64, String>,
+
+    pub regions: HashMap<String, Region>,
 
     pub cells: HashMap<(i32, i32), Cell>,
     /// Map cell record ids to grid
@@ -42,6 +44,8 @@ pub struct MapData {
     // painter
     pub refresh_requested: bool,
     pub texture_handle: Option<TextureHandle>,
+    // pub region_shapes: Vec<Shape>,
+    // pub city_shapes: Vec<Shape>,
     pub tooltip_names: bool,
     pub overlay_conflicts: bool,
     pub overlay_region: bool,
@@ -53,8 +57,6 @@ pub struct MapItemViewModel {
     pub path: PathBuf,
 
     pub enabled: bool,
-    /// The actual plugin in memory
-    pub plugin: Plugin,
 }
 impl MapItemViewModel {
     pub fn get_name(&self) -> String {
@@ -617,29 +619,29 @@ fn generate_map(map_data: &mut MapData, ui: &mut egui::Ui) {
                 let hy = grid_y % GRID;
 
                 let heightmap = land.world_map_data.data.clone().to_vec();
-                let mut color = get_map_color(heightmap[hy][hx] as f32);
+                let color = get_map_color(heightmap[hy][hx] as f32);
 
                 // cities
-                if map_data.cells.contains_key(&key) {
-                    if let Some(map_color) = map_data.cells.get(&key).unwrap().map_color {
-                        if hx == 0
-                            // || hx == 1
-                            // || hx == 7
-                            || hx == 8
-                            || hy == 0
-                            // || hy == 1
-                            // || hy == 7
-                            || hy == 8
-                        {
-                            color = Color32::from_rgba_premultiplied(
-                                map_color[0],
-                                map_color[1],
-                                map_color[2],
-                                map_color[3],
-                            );
-                        }
-                    }
-                }
+                // if map_data.cells.contains_key(&key) {
+                //     if let Some(map_color) = map_data.cells.get(&key).unwrap().map_color {
+                //         if hx == 0
+                //             // || hx == 1
+                //             // || hx == 7
+                //             || hx == 8
+                //             || hy == 0
+                //             // || hy == 1
+                //             // || hy == 7
+                //             || hy == 8
+                //         {
+                //             color = Color32::from_rgba_premultiplied(
+                //                 map_color[0],
+                //                 map_color[1],
+                //                 map_color[2],
+                //                 map_color[3],
+                //             );
+                //         }
+                //     }
+                // }
 
                 map.push(color);
             } else {
