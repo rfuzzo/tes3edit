@@ -32,35 +32,39 @@ impl TemplateApp {
             // Header
             ui.horizontal(|ui| {
                 ui.label(self.map_data.path.display().to_string());
-                if ui.button("...").clicked() {
+                if ui.button("🗁").clicked() {
                     open_compare_folder(&mut self.map_data);
                 }
             });
             ui.separator();
 
-            // plugin select view
             if !self.map_data.plugins.is_empty() {
-                ui.horizontal(|ui| {
-                    if ui.button("Select all").clicked() {
-                        for vm in self.map_data.plugins.iter_mut() {
-                            vm.enabled = true;
+                // plugin select view
+                if !self.map_data.plugins.is_empty() {
+                    ui.horizontal(|ui| {
+                        if ui.button("Select all").clicked() {
+                            for vm in self.map_data.plugins.iter_mut() {
+                                vm.enabled = true;
+                            }
                         }
-                    }
-                    if ui.button("Select none").clicked() {
-                        for vm in self.map_data.plugins.iter_mut() {
-                            vm.enabled = false;
+                        if ui.button("Select none").clicked() {
+                            for vm in self.map_data.plugins.iter_mut() {
+                                vm.enabled = false;
+                            }
                         }
-                    }
-                });
-            }
+                    });
+                }
 
-            for vm in self.map_data.plugins.iter_mut() {
-                ui.horizontal(|ui| {
-                    ui.checkbox(&mut vm.enabled, "");
-                    ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                });
+                ui.separator();
+
+                for vm in self.map_data.plugins.iter_mut() {
+                    ui.horizontal(|ui| {
+                        ui.checkbox(&mut vm.enabled, "");
+                        ui.label(vm.path.file_name().unwrap().to_string_lossy());
+                    });
+                }
+                ui.separator();
             }
-            ui.separator();
 
             // Buttons
             ui.horizontal(|ui| {

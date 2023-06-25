@@ -5,7 +5,12 @@ use crate::{create, create_from_tag, get_all_tags, get_unique_id, ERecordType, T
 impl TemplateApp {
     pub fn records_list_view(&mut self, ui: &mut egui::Ui) {
         // heading
-        if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
+        if let Some(data) = self
+            .edit_data
+            .plugins
+            .iter()
+            .find(|p| p.id == self.edit_data.current_plugin_id)
+        {
             if let Some(path) = &data.full_path {
                 let name = path.file_name().unwrap().to_str().unwrap().to_string();
                 ui.heading(name);
@@ -19,22 +24,22 @@ impl TemplateApp {
         // editor for a specific plugin
         let tags = get_all_tags();
         let Some(data) = self
-                    .plugins
+                    .edit_data.plugins
                     .iter_mut()
-                    .find(|p| p.id == self.current_plugin_id) else { return };
+                    .find(|p| p.id == self.edit_data.current_plugin_id) else { return };
 
         // search bar
-        let _search_text = self.search_text.clone();
+        let _search_text = self.edit_data.search_text.clone();
         ui.horizontal(|ui| {
             ui.label("Filter: ");
-            ui.text_edit_singleline(&mut self.search_text);
+            ui.text_edit_singleline(&mut self.edit_data.search_text);
         });
         ui.separator();
 
         // add record button
         ui.horizontal(|ui| {
             egui::ComboBox::from_label("")
-                .selected_text(format!("{:?}", self.record_type))
+                .selected_text(format!("{:?}", self.edit_data.record_type))
                 .show_ui(ui, |ui| {
                     let tags = ERecordType::iter().collect::<Vec<_>>();
                     for t in tags {
@@ -42,12 +47,12 @@ impl TemplateApp {
                         if t == ERecordType::TES3 {
                             continue;
                         }
-                        ui.selectable_value(&mut self.record_type, t, t.to_string());
+                        ui.selectable_value(&mut self.edit_data.record_type, t, t.to_string());
                     }
                 });
 
             if ui.button("Add record").clicked() {
-                if let Some(instance) = create(self.record_type) {
+                if let Some(instance) = create(self.edit_data.record_type) {
                     let new_id = get_unique_id(&instance);
                     data.edited_records.insert(new_id.clone(), instance);
                     data.clear_cache();
@@ -57,8 +62,8 @@ impl TemplateApp {
         });
 
         // regenerate records
-        if (_search_text != self.search_text) || data.cached_ids.is_empty() {
-            data.regenerate_id_cache(&self.search_text);
+        if (_search_text != self.edit_data.search_text) || data.cached_ids.is_empty() {
+            data.regenerate_id_cache(&self.edit_data.search_text);
         }
 
         // the record list

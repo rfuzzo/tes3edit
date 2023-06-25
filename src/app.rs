@@ -3,18 +3,12 @@ use std::path::PathBuf;
 use std::{cell::RefCell, rc::Rc};
 
 use egui_notify::Toasts;
-
 use tes3::esp::Plugin;
 
-use crate::get_unique_id;
-use crate::CompareData;
-use crate::EAppState;
-use crate::EModalState;
-use crate::ERecordType;
-use crate::EScale;
-use crate::ETheme;
-use crate::MapData;
-use crate::PluginMetadata;
+use crate::{
+    get_unique_id, CompareData, EAppState, EModalState, EScale, ETheme, EditData, MapData,
+    PluginMetadata,
+};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -23,32 +17,24 @@ pub struct TemplateApp {
     // serialized data
     /// Recently opened plugins
     pub recent_plugins: Vec<PathBuf>,
-
     /// The last directory used in the file picker
     pub last_directory: PathBuf,
 
-    /// The last directory used in the file picker
+    // settings
+    pub overwrite: bool,
+    pub use_experimental: bool,
     pub theme: ETheme,
     pub scale: EScale,
 
-    pub overwrite: bool,
-
     // runtime
     #[serde(skip)]
-    pub current_plugin_id: String,
-    #[serde(skip)]
-    pub plugins: Vec<PluginMetadata>,
-    #[serde(skip)]
-    pub search_text: String,
-    #[serde(skip)]
-    pub record_type: ERecordType,
-
+    pub edit_data: EditData,
     #[serde(skip)]
     pub compare_data: CompareData,
     #[serde(skip)]
     pub map_data: MapData,
 
-    // ui
+    // runtime ui
     #[serde(skip)]
     pub toasts: Toasts,
     #[serde(skip)]
@@ -58,6 +44,7 @@ pub struct TemplateApp {
     #[serde(skip)]
     pub modal_state: EModalState,
 
+    // wasm
     // https://github.com/ergrelet/resym/blob/e4d243eb9459211ade0c5bae16096712a0615b0b/resym/src/resym_app.rs
     /// Field used by wasm32 targets to store file information
     /// temporarily when selecting a file to open.
@@ -73,19 +60,19 @@ pub struct TemplateApp {
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
+            recent_plugins: vec![],
+            last_directory: "/".into(),
             // runtime data
             compare_data: CompareData::default(),
             map_data: MapData::default(),
-            // TODO refactor
-            recent_plugins: vec![],
-            last_directory: "/".into(),
+            edit_data: EditData::default(),
+            // settings
+            overwrite: false,
+            use_experimental: false,
+            // ui data
             theme: ETheme::Frappe,
             scale: EScale::Small,
-            overwrite: false,
-            current_plugin_id: "".into(),
-            plugins: vec![],
-            search_text: "".into(),
-            record_type: ERecordType::MISC,
+
             toasts: Toasts::default(),
             app_state: EAppState::default(),
             modal_state: EModalState::default(),
@@ -186,13 +173,14 @@ impl TemplateApp {
             }
 
             let plugin_id = path.to_str().unwrap().to_string();
-            self.current_plugin_id = plugin_id.clone();
+            self.edit_data.current_plugin_id = plugin_id.clone();
 
             // if the plugin already is opened, replace
             if let Some(plugin_data) = self
+                .edit_data
                 .plugins
                 .iter_mut()
-                .find(|p| p.id == self.current_plugin_id)
+                .find(|p| p.id == self.edit_data.current_plugin_id)
             {
                 // clear old data
                 plugin_data.clear_cache();
@@ -210,7 +198,7 @@ impl TemplateApp {
                 for record in plugin.objects {
                     data.records.insert(get_unique_id(&record), record);
                 }
-                self.plugins.push(data);
+                self.edit_data.plugins.push(data);
             }
         }
     }
@@ -280,9 +268,10 @@ impl eframe::App for TemplateApp {
         // modal windows
         if self.modal_open {
             match self.modal_state {
+                EModalState::None => panic!("ArgumentException"),
                 EModalState::ModalCompareInit => self.update_modal_compare(ctx),
                 EModalState::MapInit => self.update_modal_map(ctx),
-                EModalState::None => panic!("ArgumentException"),
+                EModalState::Settings => self.update_settings(ctx),
             }
         } else {
             // other main ui views

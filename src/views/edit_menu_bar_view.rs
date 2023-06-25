@@ -23,9 +23,9 @@ impl TemplateApp {
                     // create new header
                     let record = tes3::esp::TES3Object::from(Header::default());
                     data.records.insert(get_unique_id(&record), record);
-                    self.plugins.push(data);
+                    self.edit_data.plugins.push(data);
 
-                    self.current_plugin_id = plugin_id;
+                    self.edit_data.current_plugin_id = plugin_id;
                     ui.close_menu();
                 }
 
@@ -70,16 +70,17 @@ impl TemplateApp {
                     if let Some(path) = some_path {
                         // get current plugin
                         if let Some(data) = self
+                            .edit_data
                             .plugins
                             .iter_mut()
-                            .find(|p| p.id == self.current_plugin_id)
+                            .find(|p| p.id == self.edit_data.current_plugin_id)
                         {
                             if save_plugin(data, &path, &mut self.toasts, true) {
                                 // update current path
                                 data.full_path = Some(path.clone());
                                 let plugin_id = get_plugin_id(data);
                                 data.id = plugin_id.clone();
-                                self.current_plugin_id = plugin_id;
+                                self.edit_data.current_plugin_id = plugin_id;
                                 self.last_directory = path;
                             }
                         }
@@ -100,16 +101,17 @@ impl TemplateApp {
                     if let Some(path) = some_path {
                         // get current plugin
                         if let Some(data) = self
+                            .edit_data
                             .plugins
                             .iter_mut()
-                            .find(|p| p.id == self.current_plugin_id)
+                            .find(|p| p.id == self.edit_data.current_plugin_id)
                         {
                             if save_patch(data, &path, &mut self.toasts) {
                                 // update current path
                                 data.full_path = Some(path.clone());
                                 let plugin_id = get_plugin_id(data);
                                 data.id = plugin_id.clone();
-                                self.current_plugin_id = plugin_id;
+                                self.edit_data.current_plugin_id = plugin_id;
                                 self.last_directory = path;
                             }
                         }
@@ -126,11 +128,42 @@ impl TemplateApp {
                 }
             });
 
+            // View Menu
+            ui.menu_button("View", |ui| {
+                if self.use_experimental && ui.button("Compare View").clicked() {
+                    if !self.edit_data.plugins.is_empty() {
+                        self.toasts
+                            .warning("Please close all open plugins before entering compare mode");
+                    } else {
+                        self.open_modal_window(ui, EModalState::ModalCompareInit);
+                    }
+                    ui.close_menu();
+                }
+
+                if ui.button("Map View").clicked() {
+                    if !self.edit_data.plugins.is_empty() {
+                        self.toasts
+                            .warning("Please close all open plugins before entering compare mode");
+                    } else {
+                        self.open_modal_window(ui, EModalState::MapInit);
+                    }
+                    ui.close_menu();
+                }
+
+                ui.separator();
+
+                if ui.button("Settings").clicked() {
+                    self.open_modal_window(ui, EModalState::Settings);
+                    ui.close_menu();
+                }
+            });
+
+            ui.separator();
+
             // Open button
-            if ui.button("Open File").clicked() {
+            if ui.button("🖹 Open File").clicked() {
                 self.open_file_native();
             }
-
             // Open for wasm
             #[cfg(target_arch = "wasm32")]
             if ui.button("Open File").clicked() {
@@ -155,8 +188,6 @@ impl TemplateApp {
                 });
             }
 
-            ui.separator();
-
             // Save for wasm
             #[cfg(target_arch = "wasm32")]
             if ui.button("Save As").clicked() {
@@ -177,20 +208,14 @@ impl TemplateApp {
                 });
             }
 
-            if ui.button("Save Patch").clicked() {
-                if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
-                    if let Some(path) = &data.full_path {
-                        save_patch(data, path, &mut self.toasts);
-                    } else {
-                        // log error
-                        self.toasts.error("Please use Save As first");
-                    }
-                }
-            }
-
-            if ui.button("Save").clicked() {
+            if ui.button("💾 Save").clicked() {
                 // get current plugin
-                if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
+                if let Some(data) = self
+                    .edit_data
+                    .plugins
+                    .iter()
+                    .find(|p| p.id == self.edit_data.current_plugin_id)
+                {
                     if let Some(path) = &data.full_path {
                         save_plugin(data, path, &mut self.toasts, self.overwrite);
                     } else {
@@ -200,14 +225,26 @@ impl TemplateApp {
                 }
             }
 
+            if ui.button("Save Patch").clicked() {
+                if let Some(data) = self
+                    .edit_data
+                    .plugins
+                    .iter()
+                    .find(|p| p.id == self.edit_data.current_plugin_id)
+                {
+                    if let Some(path) = &data.full_path {
+                        save_patch(data, path, &mut self.toasts);
+                    } else {
+                        // log error
+                        self.toasts.error("Please use Save As first");
+                    }
+                }
+            }
+
             ui.separator();
 
-            ui.checkbox(&mut self.overwrite, "Overwrite");
-
-            ui.separator();
-
-            if ui.button("Compare").clicked() {
-                if !self.plugins.is_empty() {
+            if self.use_experimental && ui.button("↔ Compare").clicked() {
+                if !self.edit_data.plugins.is_empty() {
                     self.toasts
                         .warning("Please close all open plugins before entering compare mode");
                 } else {
@@ -215,8 +252,8 @@ impl TemplateApp {
                 }
             }
 
-            if ui.button("Map").clicked() {
-                if !self.plugins.is_empty() {
+            if ui.button("🗺 Map").clicked() {
+                if !self.edit_data.plugins.is_empty() {
                     self.toasts
                         .warning("Please close all open plugins before entering compare mode");
                 } else {
@@ -245,7 +282,7 @@ impl TemplateApp {
     pub fn tab_bar(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::ScrollArea::horizontal().show(ui, |ui| {
             ui.horizontal(|ui| {
-                let plugins_sorted = get_plugin_names(&self.plugins);
+                let plugins_sorted = get_plugin_names(&self.edit_data.plugins);
 
                 for key in plugins_sorted {
                     let name = Path::new(&key)
@@ -262,19 +299,23 @@ impl TemplateApp {
                             // tab item name
                             if ui.button(name).clicked() {
                                 // open Plugin
-                                self.current_plugin_id = key.clone();
+                                self.edit_data.current_plugin_id = key.clone();
                             }
                             // tab item close button
                             let close_button = ui.button("x");
                             if close_button.clicked() {
                                 // remove the plugin
-                                self.current_plugin_id = "".into();
+                                self.edit_data.current_plugin_id = "".into();
 
                                 // get the plugin idx with the current id
-                                if let Some((idx, _vm)) =
-                                    self.plugins.iter().enumerate().find(|p| p.1.id == key)
+                                if let Some((idx, _vm)) = self
+                                    .edit_data
+                                    .plugins
+                                    .iter()
+                                    .enumerate()
+                                    .find(|p| p.1.id == key)
                                 {
-                                    self.plugins.remove(idx);
+                                    self.edit_data.plugins.remove(idx);
                                 }
                             }
 

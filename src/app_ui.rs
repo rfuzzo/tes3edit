@@ -70,7 +70,12 @@ impl TemplateApp {
             ui.horizontal(|ui| {
                 // Number of edited records
                 let mut status_edited = "Edited Records: ".to_owned();
-                if let Some(data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id) {
+                if let Some(data) = self
+                    .edit_data
+                    .plugins
+                    .iter()
+                    .find(|p| p.id == self.edit_data.current_plugin_id)
+                {
                     status_edited = format!("Edited Records: {}", data.edited_records.len());
                 }
                 ui.label(status_edited);
@@ -152,7 +157,7 @@ impl TemplateApp {
                 // search bar
                 ui.horizontal(|ui| {
                     ui.label("Filter: ");
-                    ui.text_edit_singleline(&mut self.search_text);
+                    ui.text_edit_singleline(&mut self.edit_data.search_text);
                 });
                 ui.separator();
 
@@ -163,10 +168,10 @@ impl TemplateApp {
 
                     for key in ids.iter() {
                         // TODO upper and lowercase search
-                        if !self.search_text.is_empty()
+                        if !self.edit_data.search_text.is_empty()
                             && !key
                                 .to_lowercase()
-                                .contains(&self.search_text.to_lowercase())
+                                .contains(&self.edit_data.search_text.to_lowercase())
                         {
                             continue;
                         }

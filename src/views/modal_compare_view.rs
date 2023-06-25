@@ -7,9 +7,6 @@ use crate::{
 };
 
 impl TemplateApp {
-    /////////////////////////////////////////////////
-    // Modal views
-
     /// Returns the update modal compare of this [`TemplateApp`].
     pub(crate) fn update_modal_compare(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -31,35 +28,39 @@ impl TemplateApp {
             // Header
             ui.horizontal(|ui| {
                 ui.label(self.compare_data.path.display().to_string());
-                if ui.button("...").clicked() {
+                if ui.button("🗁").clicked() {
                     open_compare_folder(&mut self.compare_data);
                 }
             });
             ui.separator();
 
-            // plugin select view
-            if !self.compare_data.plugins.is_empty() {
-                ui.horizontal(|ui| {
-                    if ui.button("Select all").clicked() {
-                        for vm in self.compare_data.plugins.iter_mut() {
-                            vm.enabled = true;
+            if !self.map_data.plugins.is_empty() {
+                // plugin select view
+                if !self.compare_data.plugins.is_empty() {
+                    ui.horizontal(|ui| {
+                        if ui.button("Select all").clicked() {
+                            for vm in self.compare_data.plugins.iter_mut() {
+                                vm.enabled = true;
+                            }
                         }
-                    }
-                    if ui.button("Select none").clicked() {
-                        for vm in self.compare_data.plugins.iter_mut() {
-                            vm.enabled = false;
+                        if ui.button("Select none").clicked() {
+                            for vm in self.compare_data.plugins.iter_mut() {
+                                vm.enabled = false;
+                            }
                         }
-                    }
-                });
-            }
+                    });
+                }
 
-            for vm in self.compare_data.plugins.iter_mut() {
-                ui.horizontal(|ui| {
-                    ui.checkbox(&mut vm.enabled, "");
-                    ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                });
+                ui.separator();
+
+                for vm in self.compare_data.plugins.iter_mut() {
+                    ui.horizontal(|ui| {
+                        ui.checkbox(&mut vm.enabled, "");
+                        ui.label(vm.path.file_name().unwrap().to_string_lossy());
+                    });
+                }
+                ui.separator();
             }
-            ui.separator();
 
             // Buttons
             ui.horizontal(|ui| {

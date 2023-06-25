@@ -9,7 +9,7 @@ impl TemplateApp {
         // search bar
         ui.horizontal(|ui| {
             ui.label("Filter: ");
-            ui.text_edit_singleline(&mut self.search_text);
+            ui.text_edit_singleline(&mut self.edit_data.search_text);
         });
         ui.separator();
 
@@ -17,10 +17,10 @@ impl TemplateApp {
         egui::ScrollArea::vertical().show(ui, |ui| {
             for key in self.compare_data.conflicting_ids.iter() {
                 // TODO upper and lowercase search
-                if !self.search_text.is_empty()
+                if !self.edit_data.search_text.is_empty()
                     && !key
                         .to_lowercase()
-                        .contains(&self.search_text.to_lowercase())
+                        .contains(&self.edit_data.search_text.to_lowercase())
                 {
                     continue;
                 }

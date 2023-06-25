@@ -19,6 +19,24 @@ use tes3::esp::{Cell, EditorId, Landscape, Plugin, Region, TES3Object, TypeInfo}
 
 static GRID: usize = 9;
 
+pub struct EditData {
+    pub current_plugin_id: String,
+    pub plugins: Vec<PluginMetadata>,
+    pub search_text: String,
+    pub record_type: ERecordType,
+}
+
+impl Default for EditData {
+    fn default() -> Self {
+        Self {
+            current_plugin_id: Default::default(),
+            plugins: Default::default(),
+            search_text: Default::default(),
+            record_type: ERecordType::MISC,
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct MapData {
     pub path: PathBuf,
@@ -148,6 +166,7 @@ pub enum EModalState {
     None,
     ModalCompareInit,
     MapInit,
+    Settings,
 }
 
 /// Catpuccino themes
@@ -180,9 +199,9 @@ impl From<EScale> for f32 {
     fn from(val: EScale) -> Self {
         match val {
             EScale::Native => 1.2,
-            EScale::Small => 2.2,
+            EScale::Small => 2.0,
             EScale::Medium => 3.0,
-            EScale::Large => 4.5,
+            EScale::Large => 4.0,
         }
     }
 }
