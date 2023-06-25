@@ -638,31 +638,7 @@ fn generate_map(map_data: &mut MapData, ui: &mut egui::Ui) {
                 let hy = grid_y % GRID;
 
                 let heightmap = land.world_map_data.data.clone().to_vec();
-                let color = get_map_color(heightmap[hy][hx] as f32);
-
-                // cities
-                // if map_data.cells.contains_key(&key) {
-                //     if let Some(map_color) = map_data.cells.get(&key).unwrap().map_color {
-                //         if hx == 0
-                //             // || hx == 1
-                //             // || hx == 7
-                //             || hx == 8
-                //             || hy == 0
-                //             // || hy == 1
-                //             // || hy == 7
-                //             || hy == 8
-                //         {
-                //             color = Color32::from_rgba_premultiplied(
-                //                 map_color[0],
-                //                 map_color[1],
-                //                 map_color[2],
-                //                 map_color[3],
-                //             );
-                //         }
-                //     }
-                // }
-
-                map.push(color);
+                map.push(get_map_color(heightmap[hy][hx] as f32));
             } else {
                 map.push(Color32::TRANSPARENT);
             }

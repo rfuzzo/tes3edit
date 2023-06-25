@@ -33,7 +33,7 @@ impl TemplateApp {
         // hover
         if let Some(hover_pos) = painter.ctx().pointer_hover_pos() {
             let (_, from_screen) = get_transforms(&self.map_data, &painter);
-            let pos = self.abs_to_world_pos(from_screen * hover_pos);
+            let pos = abs_to_world_pos(&self.map_data, from_screen * hover_pos);
             self.map_data.hover_pos = pos;
             // tooltip
             if self.map_data.overlay_conflicts || self.map_data.tooltip_names {
@@ -74,7 +74,7 @@ impl TemplateApp {
         if let Some(interact_pos) = painter.ctx().pointer_interact_pos() {
             if ui.ctx().input(|i| i.pointer.primary_clicked()) {
                 let (_, from_screen) = get_transforms(&self.map_data, &painter);
-                let pos = self.abs_to_world_pos(from_screen * interact_pos);
+                let pos = abs_to_world_pos(&self.map_data, from_screen * interact_pos);
                 if let Some(cell) = self.map_data.cells.get(&pos) {
                     let c = TES3Object::from(cell.clone());
                     let id = get_unique_id(&c);
@@ -104,7 +104,7 @@ impl TemplateApp {
                                     region.map_color[2],
                                 );
 
-                                let p00 = self.world_to_abs_pos(key);
+                                let p00 = world_to_abs_pos(&self.map_data, key);
                                 let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
 
                                 let (to_screen, _) = get_transforms(&self.map_data, &painter);
@@ -132,7 +132,7 @@ impl TemplateApp {
                     if let Some(map_color) = cell.map_color {
                         let color = Color32::from_rgb(map_color[0], map_color[1], map_color[2]);
 
-                        let p00 = self.world_to_abs_pos(key);
+                        let p00 = world_to_abs_pos(&self.map_data, key);
                         // let p01 = Pos2::new(p00.x + 1.0, p00.y);
                         // let p10 = Pos2::new(p00.x, p00.y + 1.0);
                         let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
@@ -152,7 +152,7 @@ impl TemplateApp {
         // conflicts
         if self.map_data.overlay_conflicts {
             for (cx, cy) in self.map_data.cell_conflicts.keys() {
-                let p00 = self.world_to_abs_pos((*cx, *cy));
+                let p00 = world_to_abs_pos(&self.map_data, (*cx, *cy));
                 let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
 
                 let (to_screen, _) = get_transforms(&self.map_data, &painter);
@@ -167,7 +167,7 @@ impl TemplateApp {
         }
         // selected
         if let Some((cx, cy)) = self.map_data.cell_ids.get(&self.map_data.selected_id) {
-            let p00 = self.world_to_abs_pos((*cx, *cy));
+            let p00 = world_to_abs_pos(&self.map_data, (*cx, *cy));
             let p01 = Pos2::new(p00.x + 1.0, p00.y);
             let p10 = Pos2::new(p00.x, p00.y + 1.0);
             let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
@@ -197,18 +197,6 @@ impl TemplateApp {
                 egui::CollapsingHeader::new("Settings").show(ui, |ui| self.options_ui(ui));
             });
     }
-
-    fn abs_to_world_pos(&self, abs_pos: Pos2) -> (i32, i32) {
-        let x = abs_pos.x as i32 + self.map_data.bounds_x.0;
-        let y = -(abs_pos.y as i32 - self.map_data.bounds_y.1);
-        (x, y)
-    }
-
-    fn world_to_abs_pos(&self, world_pos: (i32, i32)) -> Pos2 {
-        let x = world_pos.0 - self.map_data.bounds_x.0;
-        let y = -(world_pos.1 - self.map_data.bounds_y.1);
-        Pos2::new(x as f32, y as f32)
-    }
 }
 
 pub fn paint(painter: &egui::Painter, map_data: &MapData) {
@@ -237,4 +225,16 @@ fn get_transforms(data: &MapData, painter: &Painter) -> (RectTransform, RectTran
     let to_screen = emath::RectTransform::from_to(world, canvas);
     let from_screen = emath::RectTransform::from_to(canvas, world);
     (to_screen, from_screen)
+}
+
+fn abs_to_world_pos(map_data: &MapData, abs_pos: Pos2) -> (i32, i32) {
+    let x = abs_pos.x as i32 + map_data.bounds_x.0;
+    let y = -(abs_pos.y as i32 - map_data.bounds_y.1);
+    (x, y)
+}
+
+fn world_to_abs_pos(map_data: &MapData, world_pos: (i32, i32)) -> Pos2 {
+    let x = world_pos.0 - map_data.bounds_x.0;
+    let y = -(world_pos.1 - map_data.bounds_y.1);
+    Pos2::new(x as f32, y as f32)
 }
