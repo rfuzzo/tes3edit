@@ -1,4 +1,5 @@
 use strum::IntoEnumIterator;
+use tes3::esp::TypeInfo;
 
 use crate::{create, create_from_tag, get_all_tags, get_unique_id, ERecordType, TemplateApp};
 
@@ -66,6 +67,8 @@ impl TemplateApp {
             data.regenerate_id_cache(&self.edit_data.search_text);
         }
 
+        let mut clicked = false;
+
         // the record list
         let mut record_ids_to_delete = vec![];
         egui::ScrollArea::vertical().show(ui, |ui| {
@@ -97,6 +100,46 @@ impl TemplateApp {
                         let response = ui.add(egui::Label::new(label).sense(egui::Sense::click()));
                         // context menu
                         response.clone().context_menu(|ui| {
+                            // copy record
+                            if ui.button("Copy").clicked() {
+                                self.edit_data.copied_record =
+                                    if data.edited_records.contains_key(id) {
+                                        Some(data.edited_records.get_mut(id).unwrap().clone())
+                                    } else if data.records.contains_key(id) {
+                                        Some(data.records.get_mut(id).unwrap().clone())
+                                    } else {
+                                        None
+                                    };
+                                self.toasts.success("Copied record");
+                                ui.close_menu();
+                            }
+
+                            // paste record
+                            if self.edit_data.copied_record.is_some()
+                                && ui.button("Paste").clicked()
+                            {
+                                let copy = self.edit_data.copied_record.clone().unwrap();
+
+                                if let Some(current_record) =
+                                    if data.edited_records.contains_key(id) {
+                                        Some(data.edited_records.get_mut(id).unwrap())
+                                    } else if data.records.contains_key(id) {
+                                        Some(data.records.get_mut(id).unwrap())
+                                    } else {
+                                        None
+                                    }
+                                {
+                                    if copy.tag_str() == current_record.tag_str() {
+                                        // then we can copy paste
+                                        *current_record = copy;
+                                    }
+                                }
+
+                                ui.close_menu();
+                            }
+
+                            ui.separator();
+
                             // copy id
                             if ui.button("Copy ID").clicked() {
                                 ui.output_mut(|o| {
@@ -144,6 +187,8 @@ impl TemplateApp {
                             }
 
                             data.selected_record_id = Some(id.to_string());
+
+                            clicked = true;
                         }
                     }
                 });
@@ -195,26 +240,29 @@ impl TemplateApp {
             data.clear_cache();
         }
 
-        // clear cache
-        let mut updates = vec![];
-        for (key, v) in data.edited_records.clone() {
-            let new_key = get_unique_id(&v);
-            if new_key != *key {
-                updates.push((key, new_key));
-            }
-        }
-        if !updates.is_empty() {
-            for (old_key, new_key) in updates {
-                // update current_plugin_id
-                if data.selected_record_id == Some(old_key.clone()) {
-                    data.selected_record_id = Some(new_key.clone());
-                }
-                // update HashMap
-                if let Some(v) = data.edited_records.remove(&old_key) {
-                    data.edited_records.insert(new_key, v);
+        // fix ids
+        if clicked {
+            let mut updates = vec![];
+            for (key, v) in data.edited_records.clone() {
+                let new_key = get_unique_id(&v);
+                if new_key != *key {
+                    updates.push((key, new_key));
                 }
             }
-            data.clear_cache();
+            if !updates.is_empty() {
+                for (old_key, new_key) in updates {
+                    // update current_plugin_id
+                    if data.selected_record_id == Some(old_key.clone()) {
+                        data.selected_record_id = Some(new_key.clone());
+                    }
+                    // update HashMap
+                    if let Some(v) = data.edited_records.remove(&old_key) {
+                        data.edited_records.insert(new_key, v);
+                        data.records.remove(&old_key);
+                    }
+                }
+                data.clear_cache();
+            }
         }
     }
 }

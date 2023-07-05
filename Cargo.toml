@@ -10,7 +10,7 @@ rust-version = "1.68"
 egui = "0.22"
 eframe = { version = "0.22", default-features = false, features = [
   "default_fonts", # Embed the default egui fonts.
-  "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+  "wgpu",          # Use the glow rendering backend. Alternative: "glow".
   "persistence",   # Enable restoring app state when restarting the app.
 ] }
 egui-notify = { git = "https://github.com/ItsEthra/egui-notify" }
@@ -20,9 +20,9 @@ catppuccin-egui = "3.0"
 strum = { version = "0.24", features = ["derive"] }
 
 [dependencies.tes3]
-git = "https://github.com/rfuzzo/tes3"
-branch = "egui_temp"
-# path = "/Users/ghost/Documents/Developer/tes3" # on mac
+# git = "https://github.com/rfuzzo/tes3"
+# branch = "egui_temp"
+path = "/Users/ghost/Documents/Developer/tes3" # on mac
 # path = "E:/GitHub/tes3conv/libs/tes3" # onpc
 default-features = false
 features = ["esp", "egui"]

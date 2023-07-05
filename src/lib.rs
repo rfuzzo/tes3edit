@@ -24,6 +24,7 @@ pub struct EditData {
     pub plugins: Vec<PluginMetadata>,
     pub search_text: String,
     pub record_type: ERecordType,
+    pub copied_record: Option<TES3Object>,
 }
 
 impl Default for EditData {
@@ -33,6 +34,7 @@ impl Default for EditData {
             plugins: Default::default(),
             search_text: Default::default(),
             record_type: ERecordType::MISC,
+            copied_record: None,
         }
     }
 }
@@ -446,6 +448,9 @@ impl PluginMetadata {
             .iter()
             .map(|e| e.to_string())
             .collect::<Vec<_>>();
+        ids.sort();
+        ids.dedup();
+
         // search filter
         if !filter_text.is_empty() {
             ids = ids
