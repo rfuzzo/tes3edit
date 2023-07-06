@@ -1,6 +1,8 @@
-use tes3::esp::editor::Editor;
+use std::{borrow::Borrow, ops::Deref};
 
-use crate::{get_unique_id, TemplateApp};
+use tes3::esp::editor::{Editor, EditorList};
+
+use crate::{create_from_tag, get_unique_id, TemplateApp};
 
 impl TemplateApp {
     pub fn conflict_compare_view(&mut self, ui: &mut egui::Ui) {
@@ -18,52 +20,79 @@ impl TemplateApp {
             // horizontal scrolling
             egui::ScrollArea::horizontal().show(ui, |ui| {
                 // start grid
-                egui::Grid::new("some_unique_id").show(ui, |ui| {
-                    // first row: mod names
-                    for mod_hash in conflicts {
-                        // variables
-                        let vm = self
-                            .compare_data
-                            .plugins
-                            .iter_mut()
-                            .find(|e| e.id == *mod_hash)
-                            .unwrap();
-                        // mod name
-                        ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                        // ui.separator();
-                    }
-                    ui.end_row();
+                egui::Grid::new("conflict_view_grid")
+                    .min_col_width(200_f32)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        // first row: mod names
+                        // each mod name is a column
+                        for mod_hash in conflicts {
+                            let vm = self
+                                .compare_data
+                                .plugins
+                                .iter_mut()
+                                .find(|e| e.id == *mod_hash)
+                                .unwrap();
+                            // mod name
+                            ui.label(vm.path.file_name().unwrap().to_string_lossy());
+                        }
+                        ui.end_row();
 
-                    // second row: editor
-                    for mod_hash in conflicts {
-                        // variables
-                        let vm = self
-                            .compare_data
-                            .plugins
-                            .iter_mut()
-                            .find(|e| e.id == *mod_hash)
-                            .unwrap();
-                        let plugin = &mut vm.plugin;
-                        // record column
-                        ui.push_id(format!("{}.{}.rc", mod_hash, key), |ui| {
-                            ui.vertical(|ui| {
-                                // record editor
-                                egui::ScrollArea::vertical()
-                                    .min_scrolled_height(600.0)
-                                    .show(ui, |ui| {
-                                        let record = plugin
-                                            .objects
-                                            .iter_mut()
-                                            .find(|e| get_unique_id(e) == key)
-                                            .unwrap();
-                                        record.add_editor(ui, format!("{}.{}", mod_hash, key));
-                                    });
-                            });
-                        });
-                    }
-                    ui.end_row();
-                });
+                        // next rows for each field in the struct
+                        let tag = key
+                            .split(',')
+                            .collect::<Vec<_>>()
+                            .first()
+                            .unwrap()
+                            .to_owned();
+                        let instance = create_from_tag(tag).unwrap();
+                        for (i, row_name) in instance.get_editor_names().iter().enumerate() {
+                            ui.label(row_name);
+                            ui.separator();
+
+                            // each conflict is a column
+                            //let mut last_value: &mut dyn Editor;
+                            for mod_hash in conflicts {
+                                let vm = self
+                                    .compare_data
+                                    .plugins
+                                    .iter_mut()
+                                    .find(|e| e.id == *mod_hash)
+                                    .unwrap();
+                                let plugin = &mut vm.plugin;
+                                let record = plugin
+                                    .objects
+                                    .iter_mut()
+                                    .find(|e| get_unique_id(e) == key)
+                                    .unwrap();
+                                record
+                                    .get_editor_list()
+                                    .get_mut(i)
+                                    .unwrap()
+                                    .add_editor(ui, row_name.to_owned());
+
+                                let last_value = record.get_editor_list().get_mut(i - 1).unwrap();
+                                let this_value = record.get_editor_list().get_mut(i).unwrap();
+                                if get_hash(last_value) != get_hash(this_value) {
+                                    //
+                                }
+                            }
+                            ui.end_row();
+                        }
+                    });
             });
         }
     }
+}
+
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
+fn get_hash<T>(obj: T) -> u64
+where
+    T: Hash,
+{
+    let mut hasher = DefaultHasher::new();
+    obj.hash(&mut hasher);
+    hasher.finish()
 }

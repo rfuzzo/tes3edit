@@ -31,17 +31,14 @@ impl TemplateApp {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     // get the record to edit from the original records or the edited ones
                     if plugin_data.edited_records.contains_key(current_record_id) {
-                        plugin_data
+                        let object = plugin_data
                             .edited_records
                             .get_mut(current_record_id)
-                            .unwrap()
-                            .add_editor(ui, current_record_id.to_owned());
+                            .unwrap();
+                        object.add_editor(ui, current_record_id.to_owned());
                     } else if plugin_data.records.contains_key(current_record_id) {
-                        plugin_data
-                            .records
-                            .get_mut(current_record_id)
-                            .unwrap()
-                            .add_editor(ui, current_record_id.to_owned());
+                        let object = plugin_data.records.get_mut(current_record_id).unwrap();
+                        object.add_editor(ui, current_record_id.to_owned());
                     }
                 });
             }

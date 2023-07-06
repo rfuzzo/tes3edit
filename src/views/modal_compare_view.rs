@@ -34,7 +34,7 @@ impl TemplateApp {
             });
             ui.separator();
 
-            if !self.map_data.plugins.is_empty() {
+            if !self.compare_data.plugins.is_empty() {
                 // plugin select view
                 if !self.compare_data.plugins.is_empty() {
                     ui.horizontal(|ui| {
