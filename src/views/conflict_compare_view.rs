@@ -73,9 +73,9 @@ impl TemplateApp {
 
                                 let last_value = record.get_editor_list().get_mut(i - 1).unwrap();
                                 let this_value = record.get_editor_list().get_mut(i).unwrap();
-                                if get_hash(last_value) != get_hash(this_value) {
-                                    //
-                                }
+                                // if get_hash(last_value) != get_hash(this_value) {
+                                //     //
+                                // }
                             }
                             ui.end_row();
                         }
@@ -83,16 +83,4 @@ impl TemplateApp {
             });
         }
     }
-}
-
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-
-fn get_hash<T>(obj: T) -> u64
-where
-    T: Hash,
-{
-    let mut hasher = DefaultHasher::new();
-    obj.hash(&mut hasher);
-    hasher.finish()
 }
