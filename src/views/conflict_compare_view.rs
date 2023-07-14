@@ -1,6 +1,4 @@
-use std::{borrow::Borrow, ops::Deref};
-
-use tes3::esp::editor::{Editor, EditorList};
+use tes3::esp::editor::EditorList;
 
 use crate::{create_from_tag, get_unique_id, TemplateApp};
 
@@ -71,9 +69,9 @@ impl TemplateApp {
                                     .unwrap()
                                     .add_editor(ui, row_name.to_owned());
 
-                                let last_value = record.get_editor_list().get_mut(i - 1).unwrap();
-                                let this_value = record.get_editor_list().get_mut(i).unwrap();
-                                // if get_hash(last_value) != get_hash(this_value) {
+                                // let last_value = record.get_editor_list().get_mut(i - 1).unwrap();
+                                // let this_value = record.get_editor_list().get_mut(i).unwrap();
+                                // if !last_value.is_same(this_value) {
                                 //     //
                                 // }
                             }
