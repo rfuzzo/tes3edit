@@ -17,15 +17,16 @@ egui-notify = { git = "https://github.com/ItsEthra/egui-notify" }
 rfd = { version = "0.11.0", features = ["file-handle-inner"] }
 serde = { version = "1", features = ["derive"] }
 catppuccin-egui = "3.0"
-strum = { version = "0.24", features = ["derive"] }
+strum = { version = "0.25", features = ["derive"] }
+serde_yaml = "0.9"
 
 [dependencies.tes3]
 git = "https://github.com/rfuzzo/tes3"
 branch = "egui_temp"
 # path = "/Users/ghost/Documents/Developer/tes3" # on mac
-# path = "E:/GitHub/tes3conv/libs/tes3" # onpc
+# path = "E:/GitHub/tes3"             # onpc
 default-features = false
-features = ["esp", "egui"]
+features = ["esp", "egui", "serde"]
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

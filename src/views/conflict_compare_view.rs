@@ -63,17 +63,15 @@ impl TemplateApp {
                                     .iter_mut()
                                     .find(|e| get_unique_id(e) == key)
                                     .unwrap();
-                                record
-                                    .get_editor_list()
-                                    .get_mut(i)
-                                    .unwrap()
-                                    .add_editor(ui, row_name.to_owned());
+                                let field = record.get_editor_list().get_mut(i).unwrap();
 
-                                // let last_value = record.get_editor_list().get_mut(i - 1).unwrap();
-                                // let this_value = record.get_editor_list().get_mut(i).unwrap();
-                                // if !last_value.is_same(this_value) {
-                                //     //
-                                // }
+                                field.add_editor(ui, row_name.to_owned());
+
+                                let result = serde_yaml::to_string(field);
+                                let str1 = match result {
+                                    Ok(t) => t,
+                                    Err(e) => "".to_owned(),
+                                };
                             }
                             ui.end_row();
                         }
