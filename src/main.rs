@@ -5,34 +5,35 @@
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
     // Log to stdout (if you run with `RUST_LOG=debug`).
+
+    use tes3edit::TemplateApp;
+
     tracing_subscriber::fmt::init();
 
-    //let native_options = eframe::NativeOptions::default();
-    let native_options = eframe::NativeOptions {
-        drag_and_drop_support: true,
-        ..Default::default()
-    };
-
+    let native_options = eframe::NativeOptions::default();
     eframe::run_native(
-        "tes3edit",
+        "flin",
         native_options,
-        Box::new(|cc| Box::new(tes3edit::TemplateApp::new(cc))),
+        Box::new(|cc: &eframe::CreationContext<'_>| Box::new(TemplateApp::new(cc))),
     )
 }
 
-// when compiling to web using trunk.
+// When compiling to web using trunk:
 #[cfg(target_arch = "wasm32")]
 fn main() {
     use tes3edit::TemplateApp;
 
+    // Redirect `log` message to `console.log` and friends:
+    eframe::WebLogger::init(log::LevelFilter::Debug).ok();
+
     let web_options = eframe::WebOptions::default();
+
     wasm_bindgen_futures::spawn_local(async {
-        let runner = eframe::WebRunner::new();
-        runner
+        eframe::WebRunner::new()
             .start(
-                "tes3edit_web",
+                "tes3edit_canvas_id", // hardcode it
                 web_options,
-                Box::new(|_a| Box::<TemplateApp>::default()),
+                Box::new(|cc| Box::new(TemplateApp::new(cc))),
             )
             .await
             .expect("failed to start eframe");

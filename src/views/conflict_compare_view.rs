@@ -64,14 +64,6 @@ impl TemplateApp {
                                     .find(|e| get_unique_id(e) == key)
                                     .unwrap();
                                 let field = record.get_editor_list().get_mut(i).unwrap();
-
-                                field.add_editor(ui, row_name.to_owned());
-
-                                let result = serde_yaml::to_string(field);
-                                let str1 = match result {
-                                    Ok(t) => t,
-                                    Err(e) => "".to_owned(),
-                                };
                             }
                             ui.end_row();
                         }
