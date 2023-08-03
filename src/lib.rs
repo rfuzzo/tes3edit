@@ -3,6 +3,7 @@
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
+    time::SystemTime,
 };
 
 mod app;
@@ -111,6 +112,17 @@ impl CompareItemViewModel {
     pub fn get_name(&self) -> String {
         self.path.file_name().unwrap().to_string_lossy().to_string()
     }
+    pub fn get_extension(&self) -> String {
+        self.path.extension().unwrap().to_string_lossy().to_string()
+    }
+    pub fn get_modified(&self) -> Option<SystemTime> {
+        if let Ok(md) = self.path.metadata() {
+            if let Ok(modified) = md.modified() {
+                return Some(modified);
+            }
+        }
+        None
+    }
 }
 
 /// Gets a hash from a Pathbuf
@@ -123,33 +135,34 @@ pub fn get_path_hash(e: &std::path::PathBuf) -> u64 {
 /// Slow conflict lookup between plugins
 pub fn generate_conflict_map(data: &CompareData) -> std::collections::HashMap<String, Vec<u64>> {
     let mut conflict_map: HashMap<String, Vec<u64>> = HashMap::default();
-    // get conflicts
-    for base_mod in data.plugins.iter().filter(|e| e.enabled) {
-        // go through mod1s records
-        for record_id in base_mod.records.iter() {
-            // now check each of the other mods
-            for other_mod in data.plugins.iter().filter(|e| e.enabled) {
-                // don't check yourself
-                if base_mod.id == other_mod.id {
-                    continue;
-                }
 
-                // if any conflict found
-                if other_mod.records.contains(record_id) {
-                    // insert empty vector on first
-                    if !conflict_map.contains_key(record_id) {
-                        conflict_map.insert(record_id.clone(), vec![]);
-                    }
-
-                    // update map
-                    let mut v = conflict_map[record_id].clone();
-                    v.push(other_mod.id);
-                    conflict_map.insert(record_id.clone(), v);
-                }
+    for plugin in data.plugins.iter().filter(|e| e.enabled) {
+        let mut new_records: Vec<String> = vec![];
+        for record_id in plugin.records.iter() {
+            if conflict_map.contains_key(record_id) {
+                //conflict_map[record_id].push(plugin.id);
+                // update map
+                let mut v = conflict_map[record_id].clone();
+                v.push(plugin.id);
+                conflict_map.insert(record_id.clone(), v);
+            } else {
+                new_records.push(record_id.clone());
             }
         }
+
+        for id in new_records {
+            conflict_map.insert(id, vec![plugin.id]);
+        }
     }
-    conflict_map
+
+    // ???
+    let mut map: HashMap<String, Vec<u64>> = HashMap::default();
+    let filtered = conflict_map.iter().filter(|p| p.1.len() > 1);
+    for (k, v) in filtered {
+        map.insert(k.to_owned(), v.clone());
+    }
+
+    map
 }
 
 /// App States

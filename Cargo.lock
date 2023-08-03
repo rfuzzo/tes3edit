@@ -271,7 +271,6 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 [[package]]
 name = "bytes_io"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c80af0d056b9f8a2baa015e9338f80a53800251"
 dependencies = [
  "bstr",
  "bytemuck",
@@ -285,7 +284,6 @@ dependencies = [
 [[package]]
 name = "bytes_io_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c80af0d056b9f8a2baa015e9338f80a53800251"
 dependencies = [
  "quote",
  "syn 2.0.23",
@@ -796,7 +794,6 @@ dependencies = [
 [[package]]
 name = "esp"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c80af0d056b9f8a2baa015e9338f80a53800251"
 dependencies = [
  "base64-simd",
  "bitflags 2.3.3",
@@ -812,13 +809,13 @@ dependencies = [
  "itoa",
  "rayon",
  "serde",
+ "serde_json",
  "smart-default",
 ]
 
 [[package]]
 name = "esp_macros"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c80af0d056b9f8a2baa015e9338f80a53800251"
 dependencies = [
  "quote",
  "syn 2.0.23",
@@ -1955,6 +1952,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_json"
+version = "1.0.104"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "076066c5f1078eac5b722a31827a8832fe108bed65dfa75e233c89f8206e976c"
+dependencies = [
+ "itoa",
+ "ryu",
+ "serde",
+]
+
+[[package]]
 name = "serde_spanned"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2143,7 +2151,6 @@ checksum = "1b1c7f239eb94671427157bd93b3694320f3668d4e1eff08c7285366fd777fac"
 [[package]]
 name = "tes3"
 version = "0.0.1"
-source = "git+https://github.com/rfuzzo/tes3?branch=egui_temp#7c80af0d056b9f8a2baa015e9338f80a53800251"
 dependencies = [
  "esp",
 ]

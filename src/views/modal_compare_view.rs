@@ -137,5 +137,8 @@ fn populate_plugins(data: &mut CompareData) {
         data.plugins.push(p);
     }
 
-    data.plugins.sort_by_key(|a| a.get_name());
+    // esms first
+    //data.plugins.sort_by_key(|a| a.get_extension());
+    // then modified date
+    data.plugins.sort_by_key(|a| a.get_modified());
 }

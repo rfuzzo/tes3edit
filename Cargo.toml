@@ -21,10 +21,10 @@ strum = { version = "0.25", features = ["derive"] }
 serde_yaml = "0.9"
 
 [dependencies.tes3]
-git = "https://github.com/rfuzzo/tes3"
-branch = "egui_temp"
+# git = "https://github.com/rfuzzo/tes3"
+# branch = "egui_temp"
 # path = "/Users/ghost/Documents/Developer/tes3" # on mac
-# path = "E:/GitHub/tes3"             # onpc
+path = "E:/GitHub/tes3"             # onpc
 default-features = false
 features = ["esp", "egui", "serde"]
 

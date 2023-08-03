@@ -20,9 +20,11 @@ impl TemplateApp {
                 // start grid
                 egui::Grid::new("conflict_view_grid")
                     .min_col_width(200_f32)
+                    .max_col_width(200_f32)
                     .striped(true)
                     .show(ui, |ui| {
                         // first row: mod names
+                        ui.label("Name");
                         // each mod name is a column
                         for mod_hash in conflicts {
                             let vm = self
@@ -46,7 +48,6 @@ impl TemplateApp {
                         let instance = create_from_tag(tag).unwrap();
                         for (i, row_name) in instance.get_editor_names().iter().enumerate() {
                             ui.label(row_name);
-                            ui.separator();
 
                             // each conflict is a column
                             //let mut last_value: &mut dyn Editor;
@@ -63,7 +64,12 @@ impl TemplateApp {
                                     .iter_mut()
                                     .find(|e| get_unique_id(e) == key)
                                     .unwrap();
-                                let field = record.get_editor_list().get_mut(i).unwrap();
+
+                                let l = record.get_editor_list();
+                                let field = l.get(i).unwrap();
+
+                                let display = field.to_json();
+                                ui.label(display);
                             }
                             ui.end_row();
                         }
