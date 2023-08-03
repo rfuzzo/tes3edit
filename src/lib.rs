@@ -155,12 +155,17 @@ pub fn generate_conflict_map(data: &CompareData) -> std::collections::HashMap<St
         }
     }
 
-    // ???
+    // ??? rust pls
     let mut map: HashMap<String, Vec<u64>> = HashMap::default();
     let filtered = conflict_map.iter().filter(|p| p.1.len() > 1);
     for (k, v) in filtered {
         map.insert(k.to_owned(), v.clone());
     }
+
+    // check for actual conflicts
+    // for kvp in map {
+
+    // }
 
     map
 }

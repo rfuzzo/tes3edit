@@ -12,7 +12,7 @@ fn main() -> eframe::Result<()> {
 
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
-        "flin",
+        "tes3edit",
         native_options,
         Box::new(|cc: &eframe::CreationContext<'_>| Box::new(TemplateApp::new(cc))),
     )
