@@ -41,27 +41,22 @@ impl TemplateApp {
                             ui.end_row();
 
                             for (field_name, fields) in &ui_data.rows {
-                                //let fields = &rows[field_name];
-                                // one row
-
                                 // start with field name
                                 ui.label(field_name.to_string());
                                 // loop through fields
                                 for (i, field) in fields.iter().enumerate() {
                                     // display field as String
-
                                     if i > 0 {
                                         let last_str = &fields[i - 1];
                                         if last_str != field {
                                             // change color
                                             ui.visuals_mut().override_text_color =
                                                 Some(egui::Color32::RED);
-                                        } else {
-                                            ui.visuals_mut().override_text_color = None;
                                         }
                                     }
 
                                     ui.label(field);
+                                    ui.visuals_mut().override_text_color = None;
                                 }
                                 ui.end_row();
                             }
@@ -94,8 +89,6 @@ fn get_ui_data(compare_data: &CompareData, key: String) -> UiData {
         // get column map
         let mut columns: Vec<(String, Vec<(String, String)>)> = vec![];
         for (id, plugin) in vms.iter_mut() {
-            let mut fields: Vec<(String, String)> = vec![];
-
             let record = plugin
                 .objects
                 .iter_mut()
@@ -103,18 +96,10 @@ fn get_ui_data(compare_data: &CompareData, key: String) -> UiData {
                 .unwrap();
 
             // get fields of record
+            let mut fields: Vec<(String, String)> = vec![];
             if let Some(record_fields) = record.get_editor_list() {
                 for (field_name, field) in record_fields {
-                    if let Some(sub) = field.get_editor_list() {
-                        // if that field is atype that has itself fields
-                        //we need to recursively get them
-                        for (field_name2, field2) in sub {
-                            // fields.push((field_name2, field2.to_json()));
-                            fields.push((field_name2.to_owned(), field2.to_json()));
-                        }
-                    } else {
-                        fields.push((field_name.to_owned(), field.to_json()));
-                    }
+                    get_fields_recursive(field, &mut fields, field_name.to_owned());
                 }
             }
 
@@ -166,5 +151,23 @@ fn get_ui_data(compare_data: &CompareData, key: String) -> UiData {
             rows: rows_ordered,
             plugins,
         }
+    }
+}
+
+/// .
+fn get_fields_recursive(
+    field: &mut dyn Editor,
+    fields: &mut Vec<(String, String)>,
+    field_name: String,
+) {
+    if let Some(sub) = field.get_editor_list() {
+        // if that field is atype that has itself fields
+        //we need to recursively get them
+        for (field_name2, field2) in sub {
+            let complex_name = format!("{}.{}", field_name, field_name2);
+            get_fields_recursive(field2, fields, complex_name);
+        }
+    } else {
+        fields.push((field_name, field.to_json()));
     }
 }
