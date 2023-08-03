@@ -95,6 +95,16 @@ pub struct CompareData {
     pub conflicting_ids: Vec<String>,
 
     pub selected_id: String,
+
+    pub ui_data_id: String,
+    pub ui_data: Option<UiData>,
+}
+
+#[derive(Default)]
+pub struct UiData {
+    pub id: String,
+    pub rows: Vec<(String, Vec<String>)>,
+    pub plugins: Vec<String>,
 }
 
 #[derive(Default)]
