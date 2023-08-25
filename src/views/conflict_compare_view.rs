@@ -20,7 +20,7 @@ impl TemplateApp {
 
         if self.compare_data.ui_data.is_none() {
             self.compare_data.ui_data = Some(get_ui_data(&self.compare_data, key.clone()));
-            self.compare_data.ui_data_id = key.clone();
+            self.compare_data.ui_data_id = key;
         }
 
         if let Some(ui_data) = &self.compare_data.ui_data {

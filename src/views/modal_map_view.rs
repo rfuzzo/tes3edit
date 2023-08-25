@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
 };
 
-use tes3::esp::{Cell, Landscape, Plugin, Region, TypeInfo};
+use tes3::esp::{Cell, Landscape, Npc, Plugin, Region, TypeInfo};
 
 use crate::{
     get_path_hash, get_plugins_in_folder, get_unique_id, EAppState, MapData, MapItemViewModel,
@@ -98,6 +98,26 @@ impl TemplateApp {
         // TODO fix loadorder
         for vm in self.map_data.plugins.iter_mut().filter(|e| e.enabled) {
             if let Ok(plugin) = Plugin::from_path(&vm.path.clone()) {
+                // add travel
+                for r in plugin.objects.iter().filter(|p| is_npc(p)) {
+                    let npc = Npc::try_from(r.to_owned()).unwrap();
+                    let dests = npc.travel_destinations.clone();
+                    if !dests.is_empty() {
+                        self.map_data.travels.insert(
+                            npc.id,
+                            dests
+                                .iter()
+                                .map(|f| {
+                                    (
+                                        (f.translation[0] / 8192.0) as i32,
+                                        (f.translation[1] / 8192.0) as i32,
+                                    )
+                                })
+                                .collect::<Vec<_>>(),
+                        );
+                    }
+                }
+
                 // add cells
                 for c in plugin.objects.iter().filter(|p| is_cell(p)) {
                     let id = get_unique_id(c);
@@ -124,6 +144,13 @@ impl TemplateApp {
 
                     // add cells
                     let key = (x, y);
+
+                    for (npc, _) in self.map_data.travels.clone() {
+                        if cell.references.iter().any(|p| p.1.id == npc) {
+                            self.map_data.npcs.insert(npc, key);
+                        }
+                    }
+
                     if let Entry::Vacant(e) = cell_conflicts.entry(key) {
                         e.insert(vec![vm.id]);
                     } else {
@@ -162,6 +189,8 @@ impl TemplateApp {
         self.map_data.landscape = landscape;
         self.map_data.cell_ids = cell_id_map;
         self.map_data.land_ids = land_id_map;
+
+        //
     }
 }
 
@@ -175,6 +204,10 @@ fn is_landscape(p: &tes3::esp::TES3Object) -> bool {
 
 fn is_region(p: &tes3::esp::TES3Object) -> bool {
     p.tag_str() == "REGN"
+}
+
+fn is_npc(p: &tes3::esp::TES3Object) -> bool {
+    p.tag_str() == "NPC_"
 }
 
 fn open_compare_folder(data: &mut MapData) {

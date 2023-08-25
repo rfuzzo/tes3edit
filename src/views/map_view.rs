@@ -86,6 +86,26 @@ impl TemplateApp {
         paint(&painter, &self.map_data);
 
         // draw overlays
+
+        if self.map_data.overlay_travel {
+            let mut travel_shapes: Vec<Shape> = vec![];
+            for (key, start) in self.map_data.npcs.clone() {
+                if let Some(dest) = self.map_data.travels.get(&key) {
+                    for d in dest {
+                        let p00 = world_to_abs_pos(&self.map_data, start);
+                        let p11 = world_to_abs_pos(&self.map_data, *d);
+                        let (to_screen, _) = get_transforms(&self.map_data, &painter);
+                        let line = Shape::LineSegment {
+                            points: [to_screen * p00, to_screen * p11],
+                            stroke: Stroke::new(2.0, Color32::RED),
+                        };
+                        travel_shapes.push(line);
+                    }
+                }
+            }
+            painter.extend(travel_shapes.clone());
+        }
+
         // regions
         if self.map_data.overlay_region {
             let mut region_shapes: Vec<Shape> = vec![];

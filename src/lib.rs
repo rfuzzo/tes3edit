@@ -47,6 +47,8 @@ pub struct MapData {
     pub plugin_hashes: HashMap<u64, String>,
 
     pub regions: HashMap<String, Region>,
+    pub travels: HashMap<String, Vec<(i32, i32)>>,
+    pub npcs: HashMap<String, (i32, i32)>,
 
     pub cells: HashMap<(i32, i32), Cell>,
     /// Map cell record ids to grid
@@ -70,6 +72,7 @@ pub struct MapData {
     pub tooltip_names: bool,
     pub overlay_conflicts: bool,
     pub overlay_region: bool,
+    pub overlay_travel: bool,
 }
 
 #[derive(Default)]
