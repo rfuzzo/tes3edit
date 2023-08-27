@@ -51,11 +51,11 @@ impl TemplateApp {
         catppuccin_egui::set_theme(ctx, get_theme(&self.theme));
 
         // wasm open and save file
-        #[cfg(target_arch = "wasm32")]
-        self.process_open_file_result();
+        // #[cfg(target_arch = "wasm32")]
+        // self.process_open_file_result();
 
-        #[cfg(target_arch = "wasm32")]
-        self.process_save_file_result();
+        // #[cfg(target_arch = "wasm32")]
+        // self.process_save_file_result();
 
         // Top Panel
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {

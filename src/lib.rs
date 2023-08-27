@@ -66,8 +66,6 @@ pub struct MapData {
     // painter
     pub refresh_requested: bool,
     pub texture_handle: Option<TextureHandle>,
-    // pub region_shapes: Vec<Shape>,
-    // pub city_shapes: Vec<Shape>,
     pub tooltip_names: bool,
     pub overlay_conflicts: bool,
     pub overlay_region: bool,

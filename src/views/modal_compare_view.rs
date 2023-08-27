@@ -26,6 +26,7 @@ impl TemplateApp {
             ui.heading("Plugins to compare");
             ui.separator();
             // Header
+            #[cfg(not(target_arch = "wasm32"))]
             ui.horizontal(|ui| {
                 ui.label(self.compare_data.path.display().to_string());
                 if ui.button("🗁").clicked() {
@@ -106,6 +107,7 @@ impl TemplateApp {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn open_compare_folder(data: &mut CompareData) {
     let folder_option = rfd::FileDialog::new().pick_folder();
     if let Some(path) = folder_option {

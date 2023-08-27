@@ -30,6 +30,7 @@ impl TemplateApp {
             ui.heading("Plugins to map");
             ui.separator();
             // Header
+            #[cfg(not(target_arch = "wasm32"))]
             ui.horizontal(|ui| {
                 ui.label(self.map_data.path.display().to_string());
                 if ui.button("🗁").clicked() {
@@ -229,6 +230,7 @@ fn is_npc(p: &tes3::esp::TES3Object) -> bool {
     p.tag_str() == "NPC_"
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn open_compare_folder(data: &mut MapData) {
     if let Some(path) = rfd::FileDialog::new().pick_folder() {
         if !path.is_dir() {

@@ -19,6 +19,7 @@ serde = { version = "1", features = ["derive"] }
 catppuccin-egui = "3.0"
 strum = { version = "0.25", features = ["derive"] }
 serde_yaml = "0.9"
+log = "0.4"
 
 [dependencies.tes3]
 git = "https://github.com/rfuzzo/tes3"

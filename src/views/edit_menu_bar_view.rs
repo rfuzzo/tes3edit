@@ -1,11 +1,13 @@
 use std::path::Path;
 
-use tes3::esp::Header;
-use tes3::esp::Plugin;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::get_plugin_id;
 
-use crate::EModalState;
-use crate::{get_plugin_id, get_unique_id, save_patch, save_plugin, PluginMetadata};
-use crate::{get_plugin_names, EScale, ETheme, TemplateApp};
+use crate::{
+    get_plugin_names, get_unique_id, save_patch, save_plugin, EModalState, EScale, ETheme,
+    PluginMetadata, TemplateApp,
+};
+use tes3::esp::{Header, Plugin};
 
 impl TemplateApp {
     #[allow(unused_variables)] // for wasm
@@ -32,6 +34,7 @@ impl TemplateApp {
                 ui.separator();
 
                 // Open
+                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Open").clicked() {
                     self.open_file_native();
                     ui.close_menu();
@@ -59,6 +62,7 @@ impl TemplateApp {
                 ui.separator();
 
                 // Save as button
+                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Save As").clicked() {
                     let some_path = rfd::FileDialog::new()
                         .add_filter("esp", &["esp"])
@@ -90,6 +94,7 @@ impl TemplateApp {
                 }
 
                 // Save as patch button
+                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Save As Patch").clicked() {
                     let some_path = rfd::FileDialog::new()
                         .add_filter("esp", &["esp"])
@@ -123,6 +128,7 @@ impl TemplateApp {
                 ui.separator();
 
                 // Quit button
+                #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Quit").clicked() {
                     frame.close();
                 }
@@ -161,6 +167,7 @@ impl TemplateApp {
             ui.separator();
 
             // Open button
+            #[cfg(not(target_arch = "wasm32"))]
             if ui.button("🖹 Open File").clicked() {
                 self.open_file_native();
             }

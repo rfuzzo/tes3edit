@@ -100,60 +100,6 @@ impl TemplateApp {
         Default::default()
     }
 
-    #[cfg(target_arch = "wasm32")]
-    pub fn process_save_file_result(&mut self) {
-        use std::path::Path;
-
-        if let Some(file_name) = self.save_file_data.borrow_mut().take() {
-            // todo save to file in wasm
-            if let Some(_plugin_data) = self.plugins.iter().find(|p| p.id == self.current_plugin_id)
-            {
-                let path = Path::new(file_name.as_str());
-                // crate::save_all(
-                //     &plugin_data.records,
-                //     &plugin_data.edited_records,
-                //     path,
-                //     &mut self.toasts,
-                //     &self.overwrite,
-                // );
-                self.toasts.info(path.display().to_string());
-                //self.last_directory = path.to_path_buf();
-            }
-        }
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    pub fn process_open_file_result(&mut self) {
-        if let Some((name, plugin)) = self.open_file_data.borrow_mut().take() {
-            let plugin_id = name;
-            self.current_plugin_id = plugin_id.clone();
-
-            if let Some(plugin_data) = self
-                .plugins
-                .iter_mut()
-                .find(|p| p.id == self.current_plugin_id)
-            {
-                // clear old data
-                plugin_data.cached_ids.clear();
-                plugin_data.edited_records.clear();
-                plugin_data.records.clear();
-
-                // add new data
-                for record in plugin.objects {
-                    plugin_data.records.insert(get_unique_id(&record), record);
-                }
-            } else {
-                // insert new
-                let mut data = PluginMetadata::new(plugin_id, None);
-                // add new data
-                for record in plugin.objects {
-                    data.records.insert(get_unique_id(&record), record);
-                }
-                self.plugins.push(data);
-            }
-        }
-    }
-
     /// Open a new plugin
     ///
     /// # Panics
@@ -204,6 +150,7 @@ impl TemplateApp {
     }
 
     /// Opens a plugin
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn open_file_native(&mut self) {
         let file_option = rfd::FileDialog::new()
             .add_filter("esp", &["esp"])
