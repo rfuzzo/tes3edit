@@ -63,9 +63,32 @@ impl TemplateApp {
                 else if self.map_data.tooltip_names {
                     let name = get_cell_name(&self.map_data, self.map_data.hover_pos);
                     if !name.is_empty() {
-                        egui::show_tooltip(ui.ctx(), egui::Id::new("my_tooltip"), |ui| {
-                            ui.label(name);
-                        });
+                        if self.map_data.overlay_travel {
+                            egui::show_tooltip(ui.ctx(), egui::Id::new("my_tooltip"), |ui| {
+                                ui.label(name);
+
+                                // travel destinations
+                                let mut destinations: Vec<String> = vec![];
+                                for (p1, p2) in self.map_data.edges.iter() {
+                                    if &self.map_data.hover_pos == p1 {
+                                        destinations.push(get_cell_name(&self.map_data, *p2));
+                                    }
+                                    if &self.map_data.hover_pos == p2 {
+                                        destinations.push(get_cell_name(&self.map_data, *p1));
+                                    }
+                                }
+                                if !destinations.is_empty() {
+                                    ui.separator();
+                                }
+                                for d in destinations {
+                                    ui.label(d);
+                                }
+                            });
+                        } else {
+                            egui::show_tooltip(ui.ctx(), egui::Id::new("my_tooltip"), |ui| {
+                                ui.label(name);
+                            });
+                        }
                     }
                 }
             }
