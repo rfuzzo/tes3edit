@@ -1,6 +1,6 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
-    env,
+    env, fs,
     path::PathBuf,
 };
 
@@ -96,6 +96,9 @@ impl TemplateApp {
         let mut land_id_map: HashMap<String, (i32, i32)> = HashMap::default();
 
         // TODO fix loadorder
+        let mut travels: HashMap<String, Vec<(i32, i32)>> = HashMap::default();
+        let mut npcs: HashMap<String, (i32, i32)> = HashMap::default();
+
         for vm in self.map_data.plugins.iter_mut().filter(|e| e.enabled) {
             if let Ok(plugin) = Plugin::from_path(&vm.path.clone()) {
                 // add travel
@@ -103,18 +106,20 @@ impl TemplateApp {
                     let npc = Npc::try_from(r.to_owned()).unwrap();
                     let dests = npc.travel_destinations.clone();
                     if !dests.is_empty() {
-                        self.map_data.travels.insert(
-                            npc.id,
-                            dests
-                                .iter()
-                                .map(|f| {
-                                    (
-                                        (f.translation[0] / 8192.0) as i32,
-                                        (f.translation[1] / 8192.0) as i32,
-                                    )
-                                })
-                                .collect::<Vec<_>>(),
-                        );
+                        let mut v: Vec<(i32, i32)> = vec![];
+                        for d in dests {
+                            let mut x = (d.translation[0] / 8192.0) as i32;
+                            if x < 0 {
+                                x -= 1;
+                            }
+                            let mut y = (d.translation[1] / 8192.0) as i32;
+                            if y < 0 {
+                                y -= 1;
+                            }
+
+                            v.push((x, y));
+                        }
+                        travels.insert(npc.id, v);
                     }
                 }
 
@@ -145,9 +150,9 @@ impl TemplateApp {
                     // add cells
                     let key = (x, y);
 
-                    for (npc, _) in self.map_data.travels.clone() {
-                        if cell.references.iter().any(|p| p.1.id == npc) {
-                            self.map_data.npcs.insert(npc, key);
+                    for (npc_id, _) in travels.clone() {
+                        if cell.references.iter().any(|p| p.1.id == npc_id) {
+                            npcs.insert(npc_id, key);
                         }
                     }
 
@@ -180,6 +185,20 @@ impl TemplateApp {
                 }
             }
         }
+
+        // sort travel destinations
+        let mut edges: Vec<((i32, i32), (i32, i32))> = vec![];
+        for (key, start) in npcs.clone() {
+            if let Some(dest) = travels.get(&key) {
+                for d in dest {
+                    if !edges.contains(&(*d, start)) {
+                        edges.push((start, *d));
+                    }
+                }
+            }
+        }
+        edges.dedup();
+        self.map_data.edges = edges;
 
         // get final list of cells
         for (k, v) in cell_conflicts.iter().filter(|p| p.1.len() > 1) {
@@ -244,5 +263,17 @@ fn populate_plugins(data: &mut MapData) {
         data.plugin_hashes.insert(id, name);
     }
 
-    data.plugins.sort_by_key(|a| a.get_name());
+    // sort
+    data.plugins.sort_by(|a, b| {
+        fs::metadata(a.path.clone())
+            .expect("filetime")
+            .modified()
+            .unwrap()
+            .cmp(
+                &fs::metadata(b.path.clone())
+                    .expect("filetime")
+                    .modified()
+                    .unwrap(),
+            )
+    });
 }

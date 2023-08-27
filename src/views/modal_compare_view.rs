@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf};
+use std::{env, fs, path::PathBuf};
 
 use tes3::esp::Plugin;
 
@@ -137,8 +137,17 @@ fn populate_plugins(data: &mut CompareData) {
         data.plugins.push(p);
     }
 
-    // esms first
-    //data.plugins.sort_by_key(|a| a.get_extension());
-    // then modified date
-    data.plugins.sort_by_key(|a| a.get_modified());
+    // sort
+    data.plugins.sort_by(|a, b| {
+        fs::metadata(a.path.clone())
+            .expect("filetime")
+            .modified()
+            .unwrap()
+            .cmp(
+                &fs::metadata(b.path.clone())
+                    .expect("filetime")
+                    .modified()
+                    .unwrap(),
+            )
+    });
 }
