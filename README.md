@@ -29,7 +29,7 @@ PRs welcome! Feature requests welcome: <https://github.com/rfuzzo/tes3edit/issue
 
 ## Getting started
 
-> Nighlty (development) builds are available here: <https://rfuzzo.github.io/tes3edit/tes3edit.exe>
+> Nighlty (development) builds are available here: [tes3edit.exe](tes3edit.exe)
 
 - download the latest release from GitHub: <https://github.com/rfuzzo/tes3edit>
 - open `tes3edit.exe`
