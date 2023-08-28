@@ -1,45 +1,56 @@
-name: Github Pages
-
-# By default, runs if you push to master. keeps your deployed app in sync with master branch.
-on:
+name: Build and Deploy
+on: 
   push:
-    branches:
-      - main
-# to only run when you do a new github release, comment out above part and uncomment the below trigger.
-# on:
-#   release:
-#     types:
-#       - published
-
+    branches: [ "main" ]
 permissions:
-  contents: write # for committing to gh-pages branch.
+  contents: write
 
 jobs:
-  build-github-pages:
-    runs-on: ubuntu-latest
+
+ build:
+    runs-on: windows-latest # The first job utilizes windows-latest
     steps:
-      - uses: actions/checkout@v2 # repo checkout
-      - uses: actions-rs/toolchain@v1 # get rust toolchain for wasm
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
-          target: wasm32-unknown-unknown
           override: true
-      - name: Rust Cache # cache the rust build artefacts
-        uses: Swatinem/rust-cache@v1
-      - name: Download and install Trunk binary
-        run: wget -qO- https://github.com/thedodd/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
-      - name: Build # build
-        # "${GITHUB_REPOSITORY#*/}" evaluates into the name of the repository
-        # using --public-url something will allow trunk to modify all the href paths like from favicon.ico to repo_name/favicon.ico .
-        # this is necessary for github pages where the site is deployed to username.github.io/repo_name and all files must be requested
-        # relatively as eframe_template/favicon.ico. if we skip public-url option, the href paths will instead request username.github.io/favicon.ico which
-        # will obviously return error 404 not found.
-        run: ./trunk build --release --public-url "${GITHUB_REPOSITORY#*/}"
-      - name: Deploy
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release 
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows
+          path: target/release/tes3edit.exe
+
+ deploy:
+    concurrency: ci-${{ github.ref }}
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Artifacts 🔻 # The built project is downloaded into the 'site' folder.
+        uses: actions/download-artifact@v3
+        with:
+          name: windows
+          path: site
+      
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: dist
-          # this option will not maintain any history of your previous pages deployment
-          # set to false if you want all page build to be committed to your gh-pages branch history
-          single-commit: true
+          folder: 'site' # The deployment folder should match the name of the artifact. Even though our project builds into the 'build' folder the artifact name of 'site' must be placed here.
+          clean-exclude: |
+            *.md
+            assets
+    

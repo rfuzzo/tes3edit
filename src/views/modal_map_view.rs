@@ -13,6 +13,26 @@ use crate::{
 
 impl TemplateApp {
     pub(crate) fn update_modal_map(&mut self, ctx: &egui::Context) {
+        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            // Buttons
+            ui.horizontal(|ui| {
+                if ui.button("OK").clicked() {
+                    // go into compare mode
+                    self.app_state = EAppState::Map;
+
+                    self.init_data();
+
+                    // close modal window
+                    self.toasts.success("Loaded plugins");
+                    self.close_modal_window(ui);
+                }
+
+                if ui.button("Cancel").clicked() {
+                    self.close_modal_window(ui);
+                }
+            });
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
             // Logic
             if !self.map_data.path.exists() {
@@ -58,32 +78,15 @@ impl TemplateApp {
 
                 ui.separator();
 
-                for vm in self.map_data.plugins.iter_mut() {
-                    ui.horizontal(|ui| {
-                        ui.checkbox(&mut vm.enabled, "");
-                        ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                    });
-                }
-                ui.separator();
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for vm in self.map_data.plugins.iter_mut() {
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut vm.enabled, "");
+                            ui.label(vm.path.file_name().unwrap().to_string_lossy());
+                        });
+                    }
+                });
             }
-
-            // Buttons
-            ui.horizontal(|ui| {
-                if ui.button("OK").clicked() {
-                    // go into compare mode
-                    self.app_state = EAppState::Map;
-
-                    self.init_data();
-
-                    // close modal window
-                    self.toasts.success("Loaded plugins");
-                    self.close_modal_window(ui);
-                }
-
-                if ui.button("Cancel").clicked() {
-                    self.close_modal_window(ui);
-                }
-            });
         });
     }
 
@@ -96,7 +99,6 @@ impl TemplateApp {
         let mut landscape: HashMap<(i32, i32), Landscape> = HashMap::default();
         let mut land_id_map: HashMap<String, (i32, i32)> = HashMap::default();
 
-        // TODO fix loadorder
         let mut travels: HashMap<String, Vec<(i32, i32)>> = HashMap::default();
         let mut npcs: HashMap<String, (i32, i32)> = HashMap::default();
 

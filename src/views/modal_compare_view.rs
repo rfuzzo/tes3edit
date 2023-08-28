@@ -9,6 +9,49 @@ use crate::{
 impl TemplateApp {
     /// Returns the update modal compare of this [`TemplateApp`].
     pub(crate) fn update_modal_compare(&mut self, ctx: &egui::Context) {
+        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            // Buttons
+            ui.horizontal(|ui| {
+                if ui.button("OK").clicked() {
+                    // go into compare mode
+                    self.app_state = EAppState::Compare;
+
+                    // calculate conflicts
+                    // load plugins into memory
+                    for vm in self.compare_data.plugins.iter_mut().filter(|e| e.enabled) {
+                        if let Ok(plugin) = Plugin::from_path(&vm.path.clone()) {
+                            vm.plugin = plugin;
+                            vm.records = vm
+                                .plugin
+                                .objects
+                                .iter()
+                                .map(get_unique_id)
+                                .collect::<Vec<_>>();
+                        }
+                    }
+
+                    let conflict_map = generate_conflict_map(&self.compare_data);
+                    self.compare_data.map = conflict_map;
+                    let mut keys = self
+                        .compare_data
+                        .map
+                        .keys()
+                        .map(|e| e.to_owned())
+                        .collect::<Vec<_>>();
+                    keys.sort();
+                    self.compare_data.conflicting_ids = keys;
+
+                    // close modal window
+                    self.toasts.success("Loaded plugins");
+                    self.close_modal_window(ui);
+                }
+
+                if ui.button("Cancel").clicked() {
+                    self.close_modal_window(ui);
+                }
+            });
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
             // Logic
             if !self.compare_data.path.exists() {
@@ -54,55 +97,15 @@ impl TemplateApp {
 
                 ui.separator();
 
-                for vm in self.compare_data.plugins.iter_mut() {
-                    ui.horizontal(|ui| {
-                        ui.checkbox(&mut vm.enabled, "");
-                        ui.label(vm.path.file_name().unwrap().to_string_lossy());
-                    });
-                }
-                ui.separator();
-            }
-
-            // Buttons
-            ui.horizontal(|ui| {
-                if ui.button("OK").clicked() {
-                    // go into compare mode
-                    self.app_state = EAppState::Compare;
-
-                    // calculate conflicts
-                    // load plugins into memory
-                    for vm in self.compare_data.plugins.iter_mut().filter(|e| e.enabled) {
-                        if let Ok(plugin) = Plugin::from_path(&vm.path.clone()) {
-                            vm.plugin = plugin;
-                            vm.records = vm
-                                .plugin
-                                .objects
-                                .iter()
-                                .map(get_unique_id)
-                                .collect::<Vec<_>>();
-                        }
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for vm in self.compare_data.plugins.iter_mut() {
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut vm.enabled, "");
+                            ui.label(vm.path.file_name().unwrap().to_string_lossy());
+                        });
                     }
-
-                    let conflict_map = generate_conflict_map(&self.compare_data);
-                    self.compare_data.map = conflict_map;
-                    let mut keys = self
-                        .compare_data
-                        .map
-                        .keys()
-                        .map(|e| e.to_owned())
-                        .collect::<Vec<_>>();
-                    keys.sort();
-                    self.compare_data.conflicting_ids = keys;
-
-                    // close modal window
-                    self.toasts.success("Loaded plugins");
-                    self.close_modal_window(ui);
-                }
-
-                if ui.button("Cancel").clicked() {
-                    self.close_modal_window(ui);
-                }
-            });
+                });
+            }
         });
     }
 }
