@@ -152,7 +152,7 @@ impl TemplateApp {
                                 let (to_screen, _) = get_transforms(&self.map_data, &painter);
                                 let rect = Rect::from_min_max(to_screen * p00, to_screen * p11);
                                 let shape =
-                                    Shape::rect_filled(rect, Rounding::none(), region_color);
+                                    Shape::rect_filled(rect, Rounding::default(), region_color);
                                 region_shapes.push(shape);
                             }
                         }
@@ -182,7 +182,7 @@ impl TemplateApp {
                         let (to_screen, _) = get_transforms(&self.map_data, &painter);
                         let rect = Rect::from_min_max(to_screen * p00, to_screen * p11);
                         let shape =
-                            Shape::rect_stroke(rect, Rounding::none(), Stroke::new(2.0, color));
+                            Shape::rect_stroke(rect, Rounding::default(), Stroke::new(2.0, color));
                         city_shapes.push(shape);
                     }
                 }
@@ -201,7 +201,7 @@ impl TemplateApp {
                 let rect = Rect::from_min_max(to_screen * p00, to_screen * p11);
                 let shape = Shape::rect_filled(
                     rect,
-                    Rounding::none(),
+                    Rounding::default(),
                     Color32::from_rgba_unmultiplied(0, 255, 0, 10),
                 );
                 painter.add(shape);

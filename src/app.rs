@@ -224,7 +224,7 @@ impl eframe::App for TemplateApp {
         } else {
             // other main ui views
             match self.app_state {
-                EAppState::Main => self.update_edit_view(ctx, frame),
+                EAppState::Main => self.update_edit_view(ctx),
                 EAppState::Compare => self.update_compare_view(ctx, frame),
                 EAppState::Map => self.update_map_view(ctx, frame),
             }

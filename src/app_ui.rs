@@ -1,6 +1,6 @@
 use tes3::esp::Plugin;
 
-use crate::{get_cell_name, get_theme, TemplateApp};
+use crate::{get_cell_name, TemplateApp};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -41,14 +41,14 @@ impl TemplateApp {
     }
 
     /// Main single plugin edit view
-    pub fn update_edit_view(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    pub fn update_edit_view(&mut self, ctx: &egui::Context) {
         // drag and drop
         self.ui_file_drag_and_drop(ctx);
 
         // scale
         ctx.set_pixels_per_point(f32::from(self.scale));
         // themes
-        catppuccin_egui::set_theme(ctx, get_theme(&self.theme));
+        //catppuccin_egui::set_theme(ctx, get_theme(&self.theme));
 
         // wasm open and save file
         // #[cfg(target_arch = "wasm32")]
@@ -59,9 +59,9 @@ impl TemplateApp {
 
         // Top Panel
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            self.menu_bar_view(ui, frame);
+            self.menu_bar_view(ui, ctx);
 
-            self.tab_bar(ui, frame);
+            self.tab_bar(ui);
         });
 
         // bottom Panel

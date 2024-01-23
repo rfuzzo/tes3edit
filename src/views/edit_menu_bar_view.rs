@@ -11,7 +11,7 @@ use tes3::esp::{Header, Plugin};
 
 impl TemplateApp {
     #[allow(unused_variables)] // for wasm
-    pub fn menu_bar_view(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+    pub fn menu_bar_view(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         // Menu Bar
         egui::menu::bar(ui, |ui| {
             // File Menu
@@ -130,7 +130,7 @@ impl TemplateApp {
                 // Quit button
                 #[cfg(not(target_arch = "wasm32"))]
                 if ui.button("Quit").clicked() {
-                    frame.close();
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                 }
             });
 
@@ -286,7 +286,7 @@ impl TemplateApp {
     }
 
     /// the tab view with all open plugins
-    pub fn tab_bar(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+    pub fn tab_bar(&mut self, ui: &mut egui::Ui) {
         egui::ScrollArea::horizontal().show(ui, |ui| {
             ui.horizontal(|ui| {
                 let plugins_sorted = get_plugin_names(&self.edit_data.plugins);
