@@ -15,7 +15,6 @@ eframe = { version = "0.26", default-features = false, features = [
 egui-notify = "0.13"
 rfd = { version = "0.13", features = ["file-handle-inner"] }
 serde = { version = "1", features = ["derive"] }
-catppuccin-egui = "4.0"
 strum = { version = "0.26", features = ["derive"] }
 serde_yaml = "0.9"
 log = "0.4"

@@ -4,8 +4,8 @@ use std::path::Path;
 use crate::get_plugin_id;
 
 use crate::{
-    get_plugin_names, get_unique_id, save_patch, save_plugin, EModalState, EScale, ETheme,
-    PluginMetadata, TemplateApp,
+    get_plugin_names, get_unique_id, save_patch, save_plugin, EModalState, EScale, PluginMetadata,
+    TemplateApp,
 };
 use tes3::esp::{Header, Plugin};
 
@@ -270,8 +270,6 @@ impl TemplateApp {
 
             // theme button on right
             ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
-                // theme
-                theme_switch(ui, &mut self.theme);
                 // scale
                 egui::ComboBox::from_label("Scale: ")
                     .selected_text(format!("{:?}", self.scale))
@@ -281,6 +279,8 @@ impl TemplateApp {
                         ui.selectable_value(&mut self.scale, EScale::Medium, "Medium");
                         ui.selectable_value(&mut self.scale, EScale::Large, "Large");
                     });
+                // theme
+                egui::global_dark_light_mode_switch(ui);
             });
         });
     }
@@ -333,17 +333,4 @@ impl TemplateApp {
             });
         });
     }
-}
-
-fn theme_switch(ui: &mut egui::Ui, theme: &mut ETheme) {
-    egui::ComboBox::from_label("Theme")
-        .selected_text(format!("{:?}", theme))
-        .show_ui(ui, |ui| {
-            ui.style_mut().wrap = Some(false);
-            ui.set_min_width(60.0);
-            ui.selectable_value(theme, ETheme::Latte, "LATTE");
-            ui.selectable_value(theme, ETheme::Frappe, "FRAPPE");
-            ui.selectable_value(theme, ETheme::Macchiato, "MACCHIATO");
-            ui.selectable_value(theme, ETheme::Mocha, "MOCHA");
-        });
 }

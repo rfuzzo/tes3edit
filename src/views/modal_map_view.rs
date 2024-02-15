@@ -204,8 +204,15 @@ impl TemplateApp {
             }
         }
         edges.dedup();
-        let ordered_edges = HashMap::default();
-        for (class, pairs) in edges {}
+        let mut ordered_edges = HashMap::default();
+        for (class, _pairs) in edges.iter() {
+            ordered_edges.insert(class.to_string(), vec![]);
+        }
+        for (class, pair) in edges {
+            if let Some(v) = ordered_edges.get_mut(&class) {
+                v.push(pair);
+            }
+        }
         self.map_data.edges = ordered_edges;
 
         // get final list of cells

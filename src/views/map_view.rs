@@ -248,7 +248,9 @@ impl TemplateApp {
 
 fn get_color_for_class(class: &str) -> Color32 {
     match class {
-        "TES3" => Color32::BLUE,
+        "Shipmaster" => Color32::BLUE,
+        "Caravaner" => Color32::GOLD,
+        "Gondolier" => Color32::LIGHT_BLUE,
         _ => Color32::RED,
     }
 }

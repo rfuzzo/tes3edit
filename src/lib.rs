@@ -201,24 +201,6 @@ pub enum EModalState {
     Settings,
 }
 
-/// Catpuccino themes
-#[derive(Deserialize, Serialize, PartialEq, Debug)]
-pub enum ETheme {
-    Frappe,
-    Latte,
-    Macchiato,
-    Mocha,
-}
-
-pub fn get_theme(theme: &ETheme) -> catppuccin_egui::Theme {
-    match theme {
-        ETheme::Frappe => catppuccin_egui::FRAPPE,
-        ETheme::Latte => catppuccin_egui::LATTE,
-        ETheme::Macchiato => catppuccin_egui::MACCHIATO,
-        ETheme::Mocha => catppuccin_egui::MOCHA,
-    }
-}
-
 /// App scale
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum EScale {

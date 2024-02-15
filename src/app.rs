@@ -6,8 +6,7 @@ use egui_notify::Toasts;
 use tes3::esp::Plugin;
 
 use crate::{
-    get_unique_id, CompareData, EAppState, EModalState, EScale, ETheme, EditData, MapData,
-    PluginMetadata,
+    get_unique_id, CompareData, EAppState, EModalState, EScale, EditData, MapData, PluginMetadata,
 };
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -23,7 +22,6 @@ pub struct TemplateApp {
     // settings
     pub overwrite: bool,
     pub use_experimental: bool,
-    pub theme: ETheme,
     pub scale: EScale,
 
     // runtime
@@ -70,7 +68,6 @@ impl Default for TemplateApp {
             overwrite: false,
             use_experimental: false,
             // ui data
-            theme: ETheme::Frappe,
             scale: EScale::Small,
 
             toasts: Toasts::default(),
