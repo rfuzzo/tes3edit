@@ -8,8 +8,9 @@ use crate::{get_cell_name, MapData, TemplateApp};
 
 impl TemplateApp {
     pub fn map_view(&mut self, ui: &mut egui::Ui) {
-        // headers
         use crate::get_unique_id;
+
+        // headers
         ui.heading("Map");
         ui.separator();
         ui.horizontal(|ui| {
@@ -248,7 +249,7 @@ pub fn paint(painter: &egui::Painter, map_data: &MapData) {
             painter.clip_rect(),
             Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
             Color32::WHITE,
-        )
+        );
     }
 }
 

@@ -3,21 +3,20 @@ name = "tes3edit"
 version = "1.0.0-RC3"
 authors = ["Moritz Baron  <r.fuzzo@gmail.com>"]
 edition = "2021"
-rust-version = "1.68"
 
 
 [dependencies]
-egui = "0.25"
-eframe = { version = "0.25", default-features = false, features = [
+egui = "0.26"
+eframe = { version = "0.26", default-features = false, features = [
   "default_fonts", # Embed the default egui fonts.
   "glow",          # Use the glow rendering backend. Alternative: "wgpu,glow".
   "persistence",   # Enable restoring app state when restarting the app.
 ] }
-egui-notify = "0.12"
+egui-notify = "0.13"
 rfd = { version = "0.13", features = ["file-handle-inner"] }
 serde = { version = "1", features = ["derive"] }
-catppuccin-egui = "3.1"
-strum = { version = "0.25", features = ["derive"] }
+catppuccin-egui = "4.0"
+strum = { version = "0.26", features = ["derive"] }
 serde_yaml = "0.9"
 log = "0.4"
 
