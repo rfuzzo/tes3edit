@@ -13,16 +13,11 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout 🛎️
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
+          submodules: true
+        uses: actions/checkout@v3
 
       - run: sudo apt update && sudo apt install libgtk-3-dev
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --all-features
+      - run: cargo check --all-features

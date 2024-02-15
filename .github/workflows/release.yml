@@ -7,18 +7,12 @@ jobs:
     name: Check
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions-rs/toolchain@v1
+      - name: Checkout 🛎️
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
+          submodules: true
+        uses: actions/checkout@v3
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
+      - run: cargo build --release 
       
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3
