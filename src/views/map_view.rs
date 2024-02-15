@@ -4,7 +4,7 @@ use egui::{
 };
 use tes3::esp::TES3Object;
 
-use crate::{get_cell_name, MapData, TemplateApp};
+use crate::{get_cell_name, CellKey, MapData, TemplateApp};
 
 impl TemplateApp {
     pub fn map_view(&mut self, ui: &mut egui::Ui) {
@@ -70,12 +70,14 @@ impl TemplateApp {
 
                                 // travel destinations
                                 let mut destinations: Vec<String> = vec![];
-                                for (p1, p2) in self.map_data.edges.iter() {
-                                    if &self.map_data.hover_pos == p1 {
-                                        destinations.push(get_cell_name(&self.map_data, *p2));
-                                    }
-                                    if &self.map_data.hover_pos == p2 {
-                                        destinations.push(get_cell_name(&self.map_data, *p1));
+                                for (_class, destination_keys) in self.map_data.edges.iter() {
+                                    for (p1, p2) in destination_keys {
+                                        if &self.map_data.hover_pos == p1 {
+                                            destinations.push(get_cell_name(&self.map_data, *p2));
+                                        }
+                                        if &self.map_data.hover_pos == p2 {
+                                            destinations.push(get_cell_name(&self.map_data, *p1));
+                                        }
                                     }
                                 }
                                 if !destinations.is_empty() {
@@ -112,21 +114,23 @@ impl TemplateApp {
         // draw overlays
 
         if self.map_data.overlay_travel {
-            let mut travel_shapes: Vec<Shape> = vec![];
+            for (class, destinations) in self.map_data.edges.iter() {
+                // get class color
+                let color = get_color_for_class(class);
+                let mut travel_shapes: Vec<Shape> = vec![];
+                for (key, value) in destinations {
+                    let p00 = world_to_abs_pos(&self.map_data, *key) + Vec2::new(0.5, 0.5);
+                    let p11 = world_to_abs_pos(&self.map_data, *value) + Vec2::new(0.5, 0.5);
 
-            for (key, value) in self.map_data.edges.iter() {
-                let p00 = world_to_abs_pos(&self.map_data, *key) + Vec2::new(0.5, 0.5);
-                let p11 = world_to_abs_pos(&self.map_data, *value) + Vec2::new(0.5, 0.5);
-
-                let (to_screen, _) = get_transforms(&self.map_data, &painter);
-                let line = Shape::LineSegment {
-                    points: [to_screen * p00, to_screen * p11],
-                    stroke: Stroke::new(2.0, Color32::RED),
-                };
-                travel_shapes.push(line);
+                    let (to_screen, _) = get_transforms(&self.map_data, &painter);
+                    let line = Shape::LineSegment {
+                        points: [to_screen * p00, to_screen * p11],
+                        stroke: Stroke::new(2.0, color),
+                    };
+                    travel_shapes.push(line);
+                }
+                painter.extend(travel_shapes.clone());
             }
-
-            painter.extend(travel_shapes.clone());
         }
 
         // regions
@@ -242,6 +246,13 @@ impl TemplateApp {
     }
 }
 
+fn get_color_for_class(class: &str) -> Color32 {
+    match class {
+        "TES3" => Color32::BLUE,
+        _ => Color32::RED,
+    }
+}
+
 pub fn paint(painter: &egui::Painter, map_data: &MapData) {
     if let Some(texture_handle) = map_data.texture_handle.clone() {
         painter.image(
@@ -270,13 +281,13 @@ fn get_transforms(data: &MapData, painter: &Painter) -> (RectTransform, RectTran
     (to_screen, from_screen)
 }
 
-fn abs_to_world_pos(map_data: &MapData, abs_pos: Pos2) -> (i32, i32) {
+fn abs_to_world_pos(map_data: &MapData, abs_pos: Pos2) -> CellKey {
     let x = abs_pos.x as i32 + map_data.bounds_x.0;
     let y = -(abs_pos.y as i32 - map_data.bounds_y.1);
     (x, y)
 }
 
-fn world_to_abs_pos(map_data: &MapData, world_pos: (i32, i32)) -> Pos2 {
+fn world_to_abs_pos(map_data: &MapData, world_pos: CellKey) -> Pos2 {
     let x = world_pos.0 - map_data.bounds_x.0;
     let y = -(world_pos.1 - map_data.bounds_y.1);
     Pos2::new(x as f32, y as f32)

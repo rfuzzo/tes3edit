@@ -7,8 +7,8 @@ use std::{
 use tes3::esp::{Cell, Landscape, Npc, Plugin, Region, TypeInfo};
 
 use crate::{
-    get_path_hash, get_plugins_in_folder, get_unique_id, EAppState, MapData, MapItemViewModel,
-    TemplateApp,
+    get_path_hash, get_plugins_in_folder, get_unique_id, CellKey, EAppState, MapData,
+    MapItemViewModel, TemplateApp,
 };
 
 impl TemplateApp {
@@ -92,25 +92,25 @@ impl TemplateApp {
 
     fn init_data(&mut self) {
         // load plugins into memory
-        let mut cells: HashMap<(i32, i32), Cell> = HashMap::default();
-        let mut cell_id_map: HashMap<String, (i32, i32)> = HashMap::default();
-        let mut cell_conflicts: HashMap<(i32, i32), Vec<u64>> = HashMap::default();
+        let mut cells: HashMap<CellKey, Cell> = HashMap::default();
+        let mut cell_id_map: HashMap<String, CellKey> = HashMap::default();
+        let mut cell_conflicts: HashMap<CellKey, Vec<u64>> = HashMap::default();
 
-        let mut landscape: HashMap<(i32, i32), Landscape> = HashMap::default();
-        let mut land_id_map: HashMap<String, (i32, i32)> = HashMap::default();
+        let mut landscape: HashMap<CellKey, Landscape> = HashMap::default();
+        let mut land_id_map: HashMap<String, CellKey> = HashMap::default();
 
-        let mut travels: HashMap<String, Vec<(i32, i32)>> = HashMap::default();
-        let mut npcs: HashMap<String, (i32, i32)> = HashMap::default();
+        let mut travels: HashMap<String, (Vec<CellKey>, String)> = HashMap::default();
+        let mut npcs: HashMap<String, CellKey> = HashMap::default();
 
         for vm in self.map_data.plugins.iter_mut().filter(|e| e.enabled) {
             if let Ok(plugin) = Plugin::from_path(&vm.path.clone()) {
                 // add travel
                 for r in plugin.objects.iter().filter(|p| is_npc(p)) {
                     let npc = Npc::try_from(r.to_owned()).unwrap();
-                    let dests = npc.travel_destinations.clone();
-                    if !dests.is_empty() {
-                        let mut v: Vec<(i32, i32)> = vec![];
-                        for d in dests {
+                    let travel_destinations = npc.travel_destinations.clone();
+                    if !travel_destinations.is_empty() {
+                        let mut travel_destination_cells: Vec<CellKey> = vec![];
+                        for d in travel_destinations {
                             let mut x = (d.translation[0] / 8192.0) as i32;
                             if x < 0 {
                                 x -= 1;
@@ -120,9 +120,12 @@ impl TemplateApp {
                                 y -= 1;
                             }
 
-                            v.push((x, y));
+                            travel_destination_cells.push((x, y));
                         }
-                        travels.insert(npc.id, v);
+
+                        // get npc class
+                        let class = npc.class;
+                        travels.insert(npc.id, (travel_destination_cells, class));
                     }
                 }
 
@@ -190,18 +193,20 @@ impl TemplateApp {
         }
 
         // sort travel destinations
-        let mut edges: Vec<((i32, i32), (i32, i32))> = vec![];
+        let mut edges: Vec<(String, (CellKey, CellKey))> = vec![];
         for (key, start) in npcs.clone() {
-            if let Some(dest) = travels.get(&key) {
+            if let Some((dest, class)) = travels.get(&key) {
                 for d in dest {
-                    if !edges.contains(&(*d, start)) {
-                        edges.push((start, *d));
+                    if !edges.contains(&(class.to_string(), (*d, start))) {
+                        edges.push((class.to_string(), (start, *d)));
                     }
                 }
             }
         }
         edges.dedup();
-        self.map_data.edges = edges;
+        let ordered_edges = HashMap::default();
+        for (class, pairs) in edges {}
+        self.map_data.edges = ordered_edges;
 
         // get final list of cells
         for (k, v) in cell_conflicts.iter().filter(|p| p.1.len() > 1) {

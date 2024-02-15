@@ -40,6 +40,8 @@ impl Default for EditData {
     }
 }
 
+type CellKey = (i32, i32);
+
 #[derive(Default)]
 pub struct MapData {
     pub path: PathBuf,
@@ -47,21 +49,21 @@ pub struct MapData {
     pub plugin_hashes: HashMap<u64, String>,
 
     pub regions: HashMap<String, Region>,
-    pub edges: Vec<((i32, i32), (i32, i32))>,
+    pub edges: HashMap<String, Vec<(CellKey, CellKey)>>,
 
-    pub cells: HashMap<(i32, i32), Cell>,
+    pub cells: HashMap<CellKey, Cell>,
     /// Map cell record ids to grid
-    pub cell_ids: HashMap<String, (i32, i32)>,
-    pub cell_conflicts: HashMap<(i32, i32), Vec<u64>>,
+    pub cell_ids: HashMap<String, CellKey>,
+    pub cell_conflicts: HashMap<CellKey, Vec<u64>>,
 
-    pub landscape: HashMap<(i32, i32), Landscape>,
+    pub landscape: HashMap<CellKey, Landscape>,
     /// Map landscape record ids to grid
-    pub land_ids: HashMap<String, (i32, i32)>,
+    pub land_ids: HashMap<String, CellKey>,
 
-    pub bounds_x: (i32, i32),
-    pub bounds_y: (i32, i32),
+    pub bounds_x: CellKey,
+    pub bounds_y: CellKey,
     pub selected_id: String,
-    pub hover_pos: (i32, i32),
+    pub hover_pos: CellKey,
 
     // painter
     pub refresh_requested: bool,
@@ -741,7 +743,7 @@ fn get_map_color(h: f32) -> Color32 {
     )
 }
 
-pub fn get_cell_name(map_data: &MapData, pos: (i32, i32)) -> String {
+pub fn get_cell_name(map_data: &MapData, pos: CellKey) -> String {
     let mut name = "".to_owned();
     if let Some(cell) = map_data.cells.get(&pos) {
         name = cell.name.clone();
