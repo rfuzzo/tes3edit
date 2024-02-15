@@ -21,9 +21,7 @@ serde_yaml = "0.9"
 log = "0.4"
 
 [dependencies.tes3]
-# git = "https://github.com/rfuzzo/tes3"
-# branch = "egui"
-path = "D:/GitHub/__rfuzzo/tes3"    # onpc
+path = "tes3"                       # onpc
 default-features = false
 features = ["esp", "egui", "serde"]
 

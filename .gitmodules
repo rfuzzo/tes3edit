@@ -1,0 +1,4 @@
+[submodule "tes3"]
+	path = tes3
+	url = https://github.com/rfuzzo/tes3
+	branch = egui
