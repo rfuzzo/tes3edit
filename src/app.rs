@@ -2,15 +2,39 @@ use std::path::PathBuf;
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
+use egui::Pos2;
 use egui_notify::Toasts;
+use serde::{Deserialize, Serialize};
 use tes3::esp::Plugin;
 
 use crate::{
     get_unique_id, CompareData, EAppState, EModalState, EScale, EditData, MapData, PluginMetadata,
 };
 
+#[derive(Debug, Clone, Copy)]
+pub struct ZoomData {
+    pub drag_start: Pos2,
+    pub drag_delta: Option<Pos2>,
+    pub drag_offset: Pos2,
+
+    pub zoom: f32,
+    pub zoom_delta: Option<f32>,
+}
+
+impl Default for ZoomData {
+    fn default() -> Self {
+        Self {
+            drag_start: Default::default(),
+            drag_delta: Default::default(),
+            drag_offset: Default::default(),
+            zoom: 1.0,
+            zoom_delta: Default::default(),
+        }
+    }
+}
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
     // serialized data
@@ -41,6 +65,9 @@ pub struct TemplateApp {
     pub modal_open: bool,
     #[serde(skip)]
     pub modal_state: EModalState,
+
+    #[serde(skip)]
+    pub zoom_data: ZoomData,
 
     // wasm
     // https://github.com/ergrelet/resym/blob/e4d243eb9459211ade0c5bae16096712a0615b0b/resym/src/resym_app.rs
@@ -74,6 +101,8 @@ impl Default for TemplateApp {
             app_state: EAppState::default(),
             modal_state: EModalState::default(),
             modal_open: false,
+            zoom_data: ZoomData::default(),
+
             #[cfg(target_arch = "wasm32")]
             open_file_data: Rc::new(RefCell::new(None)),
             #[cfg(target_arch = "wasm32")]
@@ -223,7 +252,7 @@ impl eframe::App for TemplateApp {
             match self.app_state {
                 EAppState::Main => self.update_edit_view(ctx),
                 EAppState::Compare => self.update_compare_view(ctx, frame),
-                EAppState::Map => self.update_map_view(ctx, frame),
+                EAppState::Map => self.update_map_view(ctx),
             }
         }
 

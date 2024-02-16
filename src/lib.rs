@@ -12,7 +12,7 @@ mod views;
 
 pub use app::TemplateApp;
 
-use egui::{Color32, ColorImage, TextureHandle};
+use egui::{Color32, ColorImage, Pos2, TextureHandle};
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
@@ -72,6 +72,29 @@ pub struct MapData {
     pub overlay_conflicts: bool,
     pub overlay_region: bool,
     pub overlay_travel: bool,
+}
+impl MapData {
+    fn height(&self) -> usize {
+        ((self.bounds_y.0.unsigned_abs() as usize + self.bounds_y.1.unsigned_abs() as usize) + 1)
+            * GRID
+    }
+
+    fn width(&self) -> usize {
+        ((self.bounds_x.0.unsigned_abs() as usize + self.bounds_x.1.unsigned_abs() as usize) + 1)
+            * GRID
+    }
+
+    pub fn abs_to_world_pos(&self, abs_pos: Pos2) -> CellKey {
+        let x = abs_pos.x as i32 + self.bounds_x.0;
+        let y = -(abs_pos.y as i32 - self.bounds_y.1);
+        (x, y)
+    }
+
+    pub fn world_to_abs_pos(&self, world_pos: CellKey) -> Pos2 {
+        let x = world_pos.0 - self.bounds_x.0;
+        let y = -(world_pos.1 - self.bounds_y.1);
+        Pos2::new(x as f32, y as f32)
+    }
 }
 
 #[derive(Default)]
@@ -632,14 +655,8 @@ where
 fn generate_map(map_data: &mut MapData, ui: &mut egui::Ui) {
     // TODO use slice
     let mut map: Vec<Color32> = vec![];
-    let height = ((map_data.bounds_y.0.unsigned_abs() as usize
-        + map_data.bounds_y.1.unsigned_abs() as usize)
-        + 1)
-        * GRID;
-    let width = ((map_data.bounds_x.0.unsigned_abs() as usize
-        + map_data.bounds_x.1.unsigned_abs() as usize)
-        + 1)
-        * GRID;
+    let height = map_data.height();
+    let width = map_data.width();
 
     for grid_y in 0..height {
         for grid_x in (0..width).rev() {

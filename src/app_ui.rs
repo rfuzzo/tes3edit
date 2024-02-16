@@ -124,7 +124,7 @@ impl TemplateApp {
     }
 
     /// Main map view
-    pub fn update_map_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    pub fn update_map_view(&mut self, ctx: &egui::Context) {
         // Top Panel
         let mut skip = false;
         egui::TopBottomPanel::top("top_panel_map").show(ctx, |ui| {
@@ -147,49 +147,47 @@ impl TemplateApp {
         }
 
         // Side Panel
-        egui::SidePanel::left("side_panel_map")
-            .min_width(250_f32)
-            .show(ctx, |ui| {
-                // heading
-                ui.heading("Cells");
-                ui.separator();
+        egui::SidePanel::right("side_panel_map").show(ctx, |ui| {
+            // heading
+            ui.heading("Cells");
+            ui.separator();
 
-                // search bar
-                ui.horizontal(|ui| {
-                    ui.label("Filter: ");
-                    ui.text_edit_singleline(&mut self.edit_data.search_text);
-                });
-                ui.separator();
-
-                // list of cells
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    let mut ids: Vec<&String> = self.map_data.cell_ids.keys().collect::<Vec<_>>();
-                    ids.sort();
-
-                    for key in ids.iter() {
-                        // TODO upper and lowercase search
-                        if !self.edit_data.search_text.is_empty()
-                            && !key
-                                .to_lowercase()
-                                .contains(&self.edit_data.search_text.to_lowercase())
-                        {
-                            continue;
-                        }
-
-                        if self.map_data.selected_id == key.to_string() {
-                            ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
-                        } else {
-                            ui.visuals_mut().override_text_color = None;
-                        }
-
-                        let response =
-                            ui.add(egui::Label::new(&(*key).clone()).sense(egui::Sense::click()));
-                        if response.clicked() {
-                            self.map_data.selected_id = key.to_string();
-                        }
-                    }
-                });
+            // search bar
+            ui.horizontal(|ui| {
+                ui.label("Filter: ");
+                ui.text_edit_singleline(&mut self.edit_data.search_text);
             });
+            ui.separator();
+
+            // list of cells
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                let mut ids: Vec<&String> = self.map_data.cell_ids.keys().collect::<Vec<_>>();
+                ids.sort();
+
+                for key in ids.iter() {
+                    // TODO upper and lowercase search
+                    if !self.edit_data.search_text.is_empty()
+                        && !key
+                            .to_lowercase()
+                            .contains(&self.edit_data.search_text.to_lowercase())
+                    {
+                        continue;
+                    }
+
+                    if self.map_data.selected_id == key.to_string() {
+                        ui.visuals_mut().override_text_color = Some(egui::Color32::RED);
+                    } else {
+                        ui.visuals_mut().override_text_color = None;
+                    }
+
+                    let response =
+                        ui.add(egui::Label::new(&(*key).clone()).sense(egui::Sense::click()));
+                    if response.clicked() {
+                        self.map_data.selected_id = key.to_string();
+                    }
+                }
+            });
+        });
 
         // footer
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {

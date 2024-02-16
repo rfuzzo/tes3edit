@@ -1,40 +1,69 @@
-use egui::{
-    emath::{self, RectTransform},
-    pos2, Color32, Painter, Pos2, Rect, Rounding, Shape, Stroke, Vec2,
-};
+use egui::{pos2, Color32, Pos2, Rect, Rounding, Shape, Stroke, Vec2};
 use tes3::esp::TES3Object;
 
-use crate::{get_cell_name, CellKey, MapData, TemplateApp};
+use crate::{get_cell_name, TemplateApp, GRID};
 
 impl TemplateApp {
     pub fn map_view(&mut self, ui: &mut egui::Ui) {
         use crate::get_unique_id;
 
-        // headers
-        ui.heading("Map");
-        ui.separator();
-        ui.horizontal(|ui| {
-            ui.label(format!("Selected Cell: {}", self.map_data.selected_id));
-        });
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // painter
+        let (response, painter) =
+            ui.allocate_painter(ui.available_size(), egui::Sense::click_and_drag());
 
-        ui.separator();
+        // zoom
+        if let Some(delta) = self.zoom_data.drag_delta.take() {
+            self.zoom_data.drag_offset += delta.to_vec2();
+        }
+        if let Some(z) = self.zoom_data.zoom_delta.take() {
+            let r = z - 1.0;
+            let mut current_zoom = self.zoom_data.zoom;
+            current_zoom += r;
+            if current_zoom > 0.0 {
+                self.zoom_data.zoom = current_zoom;
 
-        // draw rows painter
-        let painter = egui::Painter::new(
-            ui.ctx().clone(),
-            ui.layer_id(),
-            ui.available_rect_before_wrap(),
-        );
+                // TODO offset the image for smooth zoom
+                if let Some(pointer_pos) = response.hover_pos() {
+                    let d = pointer_pos * r;
+                    self.zoom_data.drag_offset -= d.to_vec2();
+                }
+            }
+        }
 
+        // zoomed and panned canvas
+        let min = self.zoom_data.drag_offset;
+        let max = response.rect.max * self.zoom_data.zoom + self.zoom_data.drag_offset.to_vec2();
+        let canvas = Rect::from_min_max(min, max);
+
+        // transforms
+        let pixel_width = self.map_data.width() as f32 / GRID as f32;
+        let pixel_height = self.map_data.height() as f32 / GRID as f32;
+        let to = canvas;
+        let from: Rect = egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(pixel_width, pixel_height));
+
+        let to_screen = egui::emath::RectTransform::from_to(from, to);
+        let from_screen = to_screen.inverse();
+
+        // paint maps
+        let uv = Rect::from_min_max(pos2(0.0, 0.0), Pos2::new(1.0, 1.0));
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         // cache shapes
         if self.map_data.texture_handle.is_none() {
             crate::generate_map(&mut self.map_data, ui);
         }
 
+        if let Some(texture_handle) = &self.map_data.texture_handle.clone() {
+            painter.image(texture_handle.id(), canvas, uv, Color32::WHITE);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Responses
+
         // hover
         if let Some(hover_pos) = painter.ctx().pointer_hover_pos() {
-            let (_, from_screen) = get_transforms(&self.map_data, &painter);
-            let pos = abs_to_world_pos(&self.map_data, from_screen * hover_pos);
+            let pos = self.map_data.abs_to_world_pos(from_screen * hover_pos);
             self.map_data.hover_pos = pos;
             // tooltip
             if self.map_data.overlay_conflicts || self.map_data.tooltip_names {
@@ -99,8 +128,7 @@ impl TemplateApp {
         // click
         if let Some(interact_pos) = painter.ctx().pointer_interact_pos() {
             if ui.ctx().input(|i| i.pointer.primary_clicked()) {
-                let (_, from_screen) = get_transforms(&self.map_data, &painter);
-                let pos = abs_to_world_pos(&self.map_data, from_screen * interact_pos);
+                let pos = self.map_data.abs_to_world_pos(from_screen * interact_pos);
                 if let Some(cell) = self.map_data.cells.get(&pos) {
                     let c = TES3Object::from(cell.clone());
                     let id = get_unique_id(&c);
@@ -109,20 +137,19 @@ impl TemplateApp {
             }
         }
 
-        paint(&painter, &self.map_data);
-
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         // draw overlays
 
+        // travel
         if self.map_data.overlay_travel {
             for (class, destinations) in self.map_data.edges.iter() {
                 // get class color
                 let color = get_color_for_class(class);
                 let mut travel_shapes: Vec<Shape> = vec![];
                 for (key, value) in destinations {
-                    let p00 = world_to_abs_pos(&self.map_data, *key) + Vec2::new(0.5, 0.5);
-                    let p11 = world_to_abs_pos(&self.map_data, *value) + Vec2::new(0.5, 0.5);
+                    let p00 = self.map_data.world_to_abs_pos(*key) + Vec2::new(0.5, 0.5);
+                    let p11 = self.map_data.world_to_abs_pos(*value) + Vec2::new(0.5, 0.5);
 
-                    let (to_screen, _) = get_transforms(&self.map_data, &painter);
                     let line = Shape::LineSegment {
                         points: [to_screen * p00, to_screen * p11],
                         stroke: Stroke::new(2.0, color),
@@ -151,10 +178,9 @@ impl TemplateApp {
                                     region.map_color[2],
                                 );
 
-                                let p00 = world_to_abs_pos(&self.map_data, key);
+                                let p00 = self.map_data.world_to_abs_pos(key);
                                 let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
 
-                                let (to_screen, _) = get_transforms(&self.map_data, &painter);
                                 let rect = Rect::from_min_max(to_screen * p00, to_screen * p11);
                                 let shape =
                                     Shape::rect_filled(rect, Rounding::default(), region_color);
@@ -168,9 +194,9 @@ impl TemplateApp {
 
             painter.extend(region_shapes.clone());
         }
+
         // cities
         let mut city_shapes: Vec<Shape> = vec![];
-        // if self.map_data.city_shapes.is_empty() {
         for x in self.map_data.bounds_x.0..self.map_data.bounds_x.1 {
             for y in self.map_data.bounds_y.0..self.map_data.bounds_y.1 {
                 // get region
@@ -179,12 +205,9 @@ impl TemplateApp {
                     if let Some(map_color) = cell.map_color {
                         let color = Color32::from_rgb(map_color[0], map_color[1], map_color[2]);
 
-                        let p00 = world_to_abs_pos(&self.map_data, key);
-                        // let p01 = Pos2::new(p00.x + 1.0, p00.y);
-                        // let p10 = Pos2::new(p00.x, p00.y + 1.0);
+                        let p00 = self.map_data.world_to_abs_pos(key);
                         let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
 
-                        let (to_screen, _) = get_transforms(&self.map_data, &painter);
                         let rect = Rect::from_min_max(to_screen * p00, to_screen * p11);
                         let shape =
                             Shape::rect_stroke(rect, Rounding::default(), Stroke::new(2.0, color));
@@ -193,16 +216,14 @@ impl TemplateApp {
                 }
             }
         }
-        // }
         painter.extend(city_shapes.clone());
 
         // conflicts
         if self.map_data.overlay_conflicts {
             for (cx, cy) in self.map_data.cell_conflicts.keys() {
-                let p00 = world_to_abs_pos(&self.map_data, (*cx, *cy));
+                let p00 = self.map_data.world_to_abs_pos((*cx, *cy));
                 let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
 
-                let (to_screen, _) = get_transforms(&self.map_data, &painter);
                 let rect = Rect::from_min_max(to_screen * p00, to_screen * p11);
                 let shape = Shape::rect_filled(
                     rect,
@@ -214,12 +235,11 @@ impl TemplateApp {
         }
         // selected
         if let Some((cx, cy)) = self.map_data.cell_ids.get(&self.map_data.selected_id) {
-            let p00 = world_to_abs_pos(&self.map_data, (*cx, *cy));
+            let p00 = self.map_data.world_to_abs_pos((*cx, *cy));
             let p01 = Pos2::new(p00.x + 1.0, p00.y);
             let p10 = Pos2::new(p00.x, p00.y + 1.0);
             let p11 = Pos2::new(p00.x + 1.0, p00.y + 1.0);
 
-            let (to_screen, _) = get_transforms(&self.map_data, &painter);
             let line1 = Shape::line_segment(
                 [to_screen * p00, to_screen * p11],
                 Stroke::new(2.0, Color32::RED),
@@ -233,10 +253,40 @@ impl TemplateApp {
             painter.add(line2);
         }
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // zoom and pan
+        // panning
+        if response.drag_started() {
+            if let Some(drag_start) = response.interact_pointer_pos() {
+                self.zoom_data.drag_start = drag_start;
+            }
+        } else if response.dragged() {
+            if let Some(current_pos) = response.interact_pointer_pos() {
+                let delta = current_pos - self.zoom_data.drag_start.to_vec2();
+                self.zoom_data.drag_delta = Some(delta);
+                self.zoom_data.drag_start = current_pos;
+            }
+        }
+
+        // zoom
+        let delta = ui.ctx().input(|i| i.zoom_delta());
+        // let delta = response.input(|i| i.zoom_delta());
+        if delta != 1.0 {
+            self.zoom_data.zoom_delta = Some(delta);
+        }
+        if response.middle_clicked() {
+            self.reset_zoom();
+            self.reset_pan();
+        }
+
         // Make sure we allocate what we used (everything)
         ui.expand_to_include_rect(painter.clip_rect());
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         // settings
+        // dumb ui hack
+        let settings_rect = egui::Rect::from_min_max(response.rect.min, pos2(0.0, 0.0));
+        ui.put(settings_rect, egui::Label::new(""));
         egui::Frame::popup(ui.style())
             .stroke(egui::Stroke::NONE)
             .show(ui, |ui| {
@@ -244,53 +294,24 @@ impl TemplateApp {
                 egui::CollapsingHeader::new("Settings").show(ui, |ui| self.options_ui(ui));
             });
     }
+
+    pub fn reset_zoom(&mut self) {
+        self.zoom_data.zoom = 1.0;
+    }
+
+    pub fn reset_pan(&mut self) {
+        self.zoom_data.drag_delta = None;
+        self.zoom_data.drag_offset = Pos2::default();
+        self.zoom_data.drag_start = Pos2::default();
+    }
 }
 
 fn get_color_for_class(class: &str) -> Color32 {
     match class {
         "Shipmaster" => Color32::BLUE,
         "Caravaner" => Color32::GOLD,
-        "Gondolier" => Color32::LIGHT_BLUE,
+        "Gondolier" => Color32::GRAY,
+        "T_Mw_RiverstriderService" => Color32::LIGHT_BLUE,
         _ => Color32::RED,
     }
-}
-
-pub fn paint(painter: &egui::Painter, map_data: &MapData) {
-    if let Some(texture_handle) = map_data.texture_handle.clone() {
-        painter.image(
-            texture_handle.id(),
-            painter.clip_rect(),
-            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
-            Color32::WHITE,
-        );
-    }
-}
-
-fn get_transforms(data: &MapData, painter: &Painter) -> (RectTransform, RectTransform) {
-    let height =
-        (data.bounds_y.0.unsigned_abs() as usize + data.bounds_y.1.unsigned_abs() as usize) + 1;
-    let width =
-        (data.bounds_x.0.unsigned_abs() as usize + data.bounds_x.1.unsigned_abs() as usize) + 1;
-
-    let min = Pos2::new(0.0, 0.0);
-    let max = Pos2::new(width as f32, height as f32);
-
-    let world = Rect::from_min_max(min, max);
-    let canvas = painter.clip_rect();
-
-    let to_screen = emath::RectTransform::from_to(world, canvas);
-    let from_screen = emath::RectTransform::from_to(canvas, world);
-    (to_screen, from_screen)
-}
-
-fn abs_to_world_pos(map_data: &MapData, abs_pos: Pos2) -> CellKey {
-    let x = abs_pos.x as i32 + map_data.bounds_x.0;
-    let y = -(abs_pos.y as i32 - map_data.bounds_y.1);
-    (x, y)
-}
-
-fn world_to_abs_pos(map_data: &MapData, world_pos: CellKey) -> Pos2 {
-    let x = world_pos.0 - map_data.bounds_x.0;
-    let y = -(world_pos.1 - map_data.bounds_y.1);
-    Pos2::new(x as f32, y as f32)
 }
