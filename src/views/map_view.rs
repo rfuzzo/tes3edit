@@ -140,26 +140,6 @@ impl TemplateApp {
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         // draw overlays
 
-        // travel
-        if self.map_data.overlay_travel {
-            for (class, destinations) in self.map_data.edges.iter() {
-                // get class color
-                let color = get_color_for_class(class);
-                let mut travel_shapes: Vec<Shape> = vec![];
-                for (key, value) in destinations {
-                    let p00 = self.map_data.world_to_abs_pos(*key) + Vec2::new(0.5, 0.5);
-                    let p11 = self.map_data.world_to_abs_pos(*value) + Vec2::new(0.5, 0.5);
-
-                    let line = Shape::LineSegment {
-                        points: [to_screen * p00, to_screen * p11],
-                        stroke: Stroke::new(2.0, color),
-                    };
-                    travel_shapes.push(line);
-                }
-                painter.extend(travel_shapes.clone());
-            }
-        }
-
         // regions
         if self.map_data.overlay_region {
             let mut region_shapes: Vec<Shape> = vec![];
@@ -218,6 +198,26 @@ impl TemplateApp {
         }
         painter.extend(city_shapes.clone());
 
+        // travel
+        if self.map_data.overlay_travel {
+            for (class, destinations) in self.map_data.edges.iter() {
+                // get class color
+                let color = get_color_for_class(class);
+                let mut travel_shapes: Vec<Shape> = vec![];
+                for (key, value) in destinations {
+                    let p00 = self.map_data.world_to_abs_pos(*key) + Vec2::new(0.5, 0.5);
+                    let p11 = self.map_data.world_to_abs_pos(*value) + Vec2::new(0.5, 0.5);
+
+                    let line = Shape::LineSegment {
+                        points: [to_screen * p00, to_screen * p11],
+                        stroke: Stroke::new(2.0, color),
+                    };
+                    travel_shapes.push(line);
+                }
+                painter.extend(travel_shapes.clone());
+            }
+        }
+
         // conflicts
         if self.map_data.overlay_conflicts {
             for (cx, cy) in self.map_data.cell_conflicts.keys() {
@@ -233,6 +233,7 @@ impl TemplateApp {
                 painter.add(shape);
             }
         }
+
         // selected
         if let Some((cx, cy)) = self.map_data.cell_ids.get(&self.map_data.selected_id) {
             let p00 = self.map_data.world_to_abs_pos((*cx, *cy));
