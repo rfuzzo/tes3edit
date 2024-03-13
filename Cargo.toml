@@ -13,7 +13,7 @@ eframe = { version = "0.26", default-features = false, features = [
   "persistence",   # Enable restoring app state when restarting the app.
 ] }
 egui-notify = "0.13"
-rfd = { version = "0.13", features = ["file-handle-inner"] }
+rfd = { version = "0.14", features = ["file-handle-inner"] }
 serde = { version = "1", features = ["derive"] }
 strum = { version = "0.26", features = ["derive"] }
 serde_yaml = "0.9"

@@ -475,7 +475,7 @@ impl PluginMetadata {
     }
 
     /// Regenerates record id cache of this plugin
-    pub fn regenerate_id_cache(&mut self, filter_text: &String) {
+    pub fn regenerate_id_cache(&mut self, filter_text: &str) {
         self.clear_cache();
 
         let mut ids = self
