@@ -7,6 +7,7 @@ use crate::{
     get_plugin_names, get_unique_id, save_patch, save_plugin, EModalState, EScale, PluginMetadata,
     TemplateApp,
 };
+use egui::Color32;
 use tes3::esp::{Header, Plugin};
 
 impl TemplateApp {
@@ -302,31 +303,38 @@ impl TemplateApp {
                     // tab item view
                     // TODO fix margins, background
                     ui.push_id(key.clone(), |ui| {
-                        ui.horizontal(|ui| {
-                            // tab item name
-                            if ui.button(name).clicked() {
-                                // open Plugin
-                                self.edit_data.current_plugin_id = key.clone();
-                            }
-                            // tab item close button
-                            let close_button = ui.button("x");
-                            if close_button.clicked() {
-                                // remove the plugin
-                                self.edit_data.current_plugin_id = "".into();
+                        let mut bg_color = Color32::DARK_GRAY;
+                        // change to light gray if theme is light
+                        if !ui.ctx().style().visuals.dark_mode {
+                            bg_color = Color32::LIGHT_GRAY;
+                        }
 
-                                // get the plugin idx with the current id
-                                if let Some((idx, _vm)) = self
-                                    .edit_data
-                                    .plugins
-                                    .iter()
-                                    .enumerate()
-                                    .find(|p| p.1.id == key)
-                                {
-                                    self.edit_data.plugins.remove(idx);
+                        egui::Frame::none().fill(bg_color).show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                // tab item name
+                                if ui.button(name).clicked() {
+                                    // open Plugin
+                                    self.edit_data.current_plugin_id = key.clone();
                                 }
-                            }
+                                // tab item close button
 
-                            ui.separator();
+                                let close_button = ui.button("x");
+                                if close_button.clicked() {
+                                    // remove the plugin
+                                    self.edit_data.current_plugin_id = "".into();
+
+                                    // get the plugin idx with the current id
+                                    if let Some((idx, _vm)) = self
+                                        .edit_data
+                                        .plugins
+                                        .iter()
+                                        .enumerate()
+                                        .find(|p| p.1.id == key)
+                                    {
+                                        self.edit_data.plugins.remove(idx);
+                                    }
+                                }
+                            });
                         });
                     });
                 }
