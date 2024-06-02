@@ -1,6 +1,6 @@
 use crate::{get_unique_id, CompareData, TemplateApp, UiData};
 use egui::epaint::ahash::HashMap;
-use tes3::esp::traits::Editor;
+use tes3::esp::editor::Editor;
 
 impl TemplateApp {
     pub fn conflict_compare_view(&mut self, ui: &mut egui::Ui) {
