@@ -6,13 +6,13 @@ edition = "2021"
 
 
 [dependencies]
-egui = "0.26"
-eframe = { version = "0.26", default-features = false, features = [
+egui = "0.27"
+eframe = { version = "0.27", default-features = false, features = [
   "default_fonts", # Embed the default egui fonts.
   "glow",          # Use the glow rendering backend. Alternative: "wgpu,glow".
   "persistence",   # Enable restoring app state when restarting the app.
 ] }
-egui-notify = "0.13"
+egui-notify = "0.14"
 rfd = { version = "0.14", features = ["file-handle-inner"] }
 serde = { version = "1", features = ["derive"] }
 strum = { version = "0.26", features = ["derive"] }
@@ -20,9 +20,9 @@ serde_yaml = "0.9"
 log = "0.4"
 
 [dependencies.tes3]
-path = "tes3"                       # onpc
+path = "tes3"
 default-features = false
-features = ["esp", "egui", "serde"]
+features = ["esp", "serde", "egui"]
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
