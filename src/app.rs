@@ -134,7 +134,7 @@ impl TemplateApp {
     pub fn open_plugin(&mut self, path_option: Option<PathBuf>, plugin: Plugin) {
         // save paths if on native
         if let Some(path) = path_option {
-            self.last_directory = path.clone();
+            self.last_directory.clone_from(&path);
 
             if !self.recent_plugins.contains(&self.last_directory) {
                 self.recent_plugins.push(self.last_directory.to_path_buf());
@@ -145,7 +145,7 @@ impl TemplateApp {
             }
 
             let plugin_id = path.to_str().unwrap().to_string();
-            self.edit_data.current_plugin_id = plugin_id.clone();
+            self.edit_data.current_plugin_id.clone_from(&plugin_id);
 
             // if the plugin already is opened, replace
             if let Some(plugin_data) = self

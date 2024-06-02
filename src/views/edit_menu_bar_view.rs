@@ -84,7 +84,7 @@ impl TemplateApp {
                                 // update current path
                                 data.full_path = Some(path.clone());
                                 let plugin_id = get_plugin_id(data);
-                                data.id = plugin_id.clone();
+                                data.id.clone_from(&plugin_id);
                                 self.edit_data.current_plugin_id = plugin_id;
                                 self.last_directory = path;
                             }
@@ -116,7 +116,7 @@ impl TemplateApp {
                                 // update current path
                                 data.full_path = Some(path.clone());
                                 let plugin_id = get_plugin_id(data);
-                                data.id = plugin_id.clone();
+                                data.id.clone_from(&plugin_id);
                                 self.edit_data.current_plugin_id = plugin_id;
                                 self.last_directory = path;
                             }
@@ -314,7 +314,7 @@ impl TemplateApp {
                                 // tab item name
                                 if ui.button(name).clicked() {
                                     // open Plugin
-                                    self.edit_data.current_plugin_id = key.clone();
+                                    self.edit_data.current_plugin_id.clone_from(&key);
                                 }
                                 // tab item close button
 

@@ -745,7 +745,7 @@ fn get_map_color(h: f32) -> Color32 {
 pub fn get_cell_name(map_data: &MapData, pos: CellKey) -> String {
     let mut name = "".to_owned();
     if let Some(cell) = map_data.cells.get(&pos) {
-        name = cell.name.clone();
+        name.clone_from(&cell.name);
         if name.is_empty() {
             if let Some(region) = cell.region.clone() {
                 name = region;
