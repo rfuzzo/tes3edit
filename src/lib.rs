@@ -12,13 +12,10 @@ mod views;
 
 pub use app::TemplateApp;
 
-use egui::{Color32, ColorImage, Pos2, TextureHandle};
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
-use tes3::esp::{Cell, EditorId, Landscape, Plugin, Region, TES3Object, TypeInfo};
-
-static GRID: usize = 9;
+use tes3::esp::{EditorId, Plugin, TES3Object, TypeInfo};
 
 pub struct EditData {
     pub current_plugin_id: String,
@@ -41,74 +38,6 @@ impl Default for EditData {
 }
 
 type CellKey = (i32, i32);
-
-#[derive(Default)]
-pub struct MapData {
-    pub path: PathBuf,
-    pub plugins: Vec<MapItemViewModel>,
-    pub plugin_hashes: HashMap<u64, String>,
-
-    pub regions: HashMap<String, Region>,
-    pub edges: HashMap<String, Vec<(CellKey, CellKey)>>,
-
-    pub cells: HashMap<CellKey, Cell>,
-    /// Map cell record ids to grid
-    pub cell_ids: HashMap<String, CellKey>,
-    pub cell_conflicts: HashMap<CellKey, Vec<u64>>,
-
-    pub landscape: HashMap<CellKey, Landscape>,
-    /// Map landscape record ids to grid
-    pub land_ids: HashMap<String, CellKey>,
-
-    pub bounds_x: CellKey,
-    pub bounds_y: CellKey,
-    pub selected_id: String,
-    pub hover_pos: CellKey,
-
-    // painter
-    pub refresh_requested: bool,
-    pub texture_handle: Option<TextureHandle>,
-    pub tooltip_names: bool,
-    pub overlay_conflicts: bool,
-    pub overlay_region: bool,
-    pub overlay_travel: bool,
-}
-impl MapData {
-    fn height(&self) -> usize {
-        ((self.bounds_y.0.unsigned_abs() as usize + self.bounds_y.1.unsigned_abs() as usize) + 1)
-            * GRID
-    }
-
-    fn width(&self) -> usize {
-        ((self.bounds_x.0.unsigned_abs() as usize + self.bounds_x.1.unsigned_abs() as usize) + 1)
-            * GRID
-    }
-
-    pub fn abs_to_world_pos(&self, abs_pos: Pos2) -> CellKey {
-        let x = abs_pos.x as i32 + self.bounds_x.0;
-        let y = -(abs_pos.y as i32 - self.bounds_y.1);
-        (x, y)
-    }
-
-    pub fn world_to_abs_pos(&self, world_pos: CellKey) -> Pos2 {
-        let x = world_pos.0 - self.bounds_x.0;
-        let y = -(world_pos.1 - self.bounds_y.1);
-        Pos2::new(x as f32, y as f32)
-    }
-}
-
-#[derive(Default)]
-pub struct MapItemViewModel {
-    pub id: u64,
-    pub path: PathBuf,
-
-    pub enabled: bool,
-}
-impl MapItemViewModel {
-    pub fn get_name(&self) -> String {
-        self.path.file_name().unwrap().to_string_lossy().to_string()
-    }
-}
 
 #[derive(Default)]
 pub struct CompareData {
@@ -211,7 +140,6 @@ pub enum EAppState {
     #[default]
     Main,
     Compare,
-    Map,
 }
 
 /// Modal windows
@@ -220,7 +148,6 @@ pub enum EModalState {
     #[default]
     None,
     ModalCompareInit,
-    MapInit,
     Settings,
 }
 
@@ -650,107 +577,4 @@ where
         });
     }
     results
-}
-
-fn generate_map(map_data: &mut MapData, ui: &mut egui::Ui) {
-    // TODO use slice
-    let mut map: Vec<Color32> = vec![];
-    let height = map_data.height();
-    let width = map_data.width();
-
-    for grid_y in 0..height {
-        for grid_x in (0..width).rev() {
-            // we can divide by grid to get the cell and subtract the bounds to get the cell coordinates
-            let x = (grid_x / GRID) as i32 + map_data.bounds_x.0;
-            let y = (grid_y / GRID) as i32 + map_data.bounds_y.0;
-
-            // get LAND record
-            let key = (x, y);
-            if let Some(land) = map_data.landscape.get(&key) {
-                // get remainder
-                let hx = grid_x % GRID;
-                let hy = grid_y % GRID;
-
-                let heightmap = land.world_map_data.data.clone().to_vec();
-                map.push(get_map_color(heightmap[hy][hx] as f32));
-            } else {
-                map.push(Color32::TRANSPARENT);
-            }
-        }
-    }
-
-    let mut pixels: Vec<u8> = vec![];
-    map.reverse();
-    for c in map {
-        pixels.push(c.r());
-        pixels.push(c.g());
-        pixels.push(c.b());
-        pixels.push(c.a());
-    }
-
-    let size: [usize; 2] = [width, height];
-    let image = ColorImage::from_rgba_premultiplied(size, &pixels);
-    let texture_handle: TextureHandle = ui.ctx().load_texture("map", image, Default::default());
-    map_data.texture_handle = Some(texture_handle);
-}
-
-/// https://github.com/NullCascade/morrowind-mods/blob/master/User%20Interface%20Expansion/plugin_source/PatchWorldMap.cpp#L158
-fn get_map_color(h: f32) -> Color32 {
-    #[derive(Default)]
-    struct MyColor {
-        pub r: f32,
-        pub g: f32,
-        pub b: f32,
-    }
-
-    let height_data = 16.0 * h;
-    let mut clipped_data = height_data / 2048.0;
-    clipped_data = (-1.0_f32).max(clipped_data.min(1.0)); // rust wtf
-
-    let mut pixel_color: MyColor = MyColor::default();
-    // Above ocean level.
-    if height_data >= 0.0 {
-        // Darker heightmap threshold.
-        if clipped_data > 0.3 {
-            let base = (clipped_data - 0.3) * 1.428;
-            pixel_color.r = 34.0 - base * 29.0;
-            pixel_color.g = 25.0 - base * 20.0;
-            pixel_color.b = 17.0 - base * 12.0;
-        }
-        // Lighter heightmap threshold.
-        else {
-            let mut base = clipped_data * 8.0;
-            if clipped_data > 0.1 {
-                base = clipped_data - 0.1 + 0.8;
-            }
-            pixel_color.r = 66.0 - base * 32.0;
-            pixel_color.g = 48.0 - base * 23.0;
-            pixel_color.b = 33.0 - base * 16.0;
-        }
-    }
-    // Underwater, fade out towards the water color.
-    else {
-        pixel_color.r = 38.0 + clipped_data * 14.0;
-        pixel_color.g = 56.0 + clipped_data * 20.0;
-        pixel_color.b = 51.0 + clipped_data * 18.0;
-    }
-
-    Color32::from_rgb(
-        pixel_color.r as u8,
-        pixel_color.g as u8,
-        pixel_color.b as u8,
-    )
-}
-
-pub fn get_cell_name(map_data: &MapData, pos: CellKey) -> String {
-    let mut name = "".to_owned();
-    if let Some(cell) = map_data.cells.get(&pos) {
-        name.clone_from(&cell.name);
-        if name.is_empty() {
-            if let Some(region) = cell.region.clone() {
-                name = region;
-            }
-        }
-    }
-    format!("{} ({},{})", name, pos.0, pos.1)
 }

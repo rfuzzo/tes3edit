@@ -1,7 +1,65 @@
-use egui::{pos2, Color32, Pos2, Rect, Rounding, Shape, Stroke, Vec2};
-use tes3::esp::TES3Object;
+use std::{collections::HashMap, path::PathBuf};
 
-use crate::{get_cell_name, TemplateApp, GRID};
+use egui::{pos2, Color32, ColorImage, Pos2, Rect, Rounding, Shape, Stroke, TextureHandle, Vec2};
+use tes3::esp::{Cell, Landscape, Region, TES3Object};
+
+use crate::{CellKey, TemplateApp};
+
+static GRID: usize = 9;
+
+#[derive(Default)]
+pub struct MapData {
+    pub path: PathBuf,
+    pub plugin_hashes: HashMap<u64, String>,
+
+    pub regions: HashMap<String, Region>,
+    pub edges: HashMap<String, Vec<(CellKey, CellKey)>>,
+
+    pub cells: HashMap<CellKey, Cell>,
+    /// Map cell record ids to grid
+    pub cell_ids: HashMap<String, CellKey>,
+    pub cell_conflicts: HashMap<CellKey, Vec<u64>>,
+
+    pub landscape: HashMap<CellKey, Landscape>,
+    /// Map landscape record ids to grid
+    pub land_ids: HashMap<String, CellKey>,
+
+    pub bounds_x: CellKey,
+    pub bounds_y: CellKey,
+    pub selected_id: String,
+    pub hover_pos: CellKey,
+
+    // painter
+    pub refresh_requested: bool,
+    pub texture_handle: Option<TextureHandle>,
+    pub tooltip_names: bool,
+    pub overlay_conflicts: bool,
+    pub overlay_region: bool,
+    pub overlay_travel: bool,
+}
+impl MapData {
+    fn height(&self) -> usize {
+        ((self.bounds_y.0.unsigned_abs() as usize + self.bounds_y.1.unsigned_abs() as usize) + 1)
+            * GRID
+    }
+
+    fn width(&self) -> usize {
+        ((self.bounds_x.0.unsigned_abs() as usize + self.bounds_x.1.unsigned_abs() as usize) + 1)
+            * GRID
+    }
+
+    pub fn abs_to_world_pos(&self, abs_pos: Pos2) -> CellKey {
+        let x = abs_pos.x as i32 + self.bounds_x.0;
+        let y = -(abs_pos.y as i32 - self.bounds_y.1);
+        (x, y)
+    }
+
+    pub fn world_to_abs_pos(&self, world_pos: CellKey) -> Pos2 {
+        let x = world_pos.0 - self.bounds_x.0;
+        let y = -(world_pos.1 - self.bounds_y.1);
+        Pos2::new(x as f32, y as f32)
+    }
+}
 
 impl TemplateApp {
     pub fn map_view(&mut self, ui: &mut egui::Ui) {

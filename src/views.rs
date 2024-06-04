@@ -6,5 +6,4 @@ pub(crate) mod edit_record_editor_view;
 pub(crate) mod edit_records_list_view;
 pub(crate) mod map_view;
 pub(crate) mod modal_compare_view;
-pub(crate) mod modal_map_view;
 pub(crate) mod modal_settings;

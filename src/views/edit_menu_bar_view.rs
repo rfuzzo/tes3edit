@@ -147,16 +147,6 @@ impl TemplateApp {
                     ui.close_menu();
                 }
 
-                if ui.button("Map View").clicked() {
-                    if !self.edit_data.plugins.is_empty() {
-                        self.toasts
-                            .warning("Please close all open plugins before entering compare mode");
-                    } else {
-                        self.open_modal_window(ui, EModalState::MapInit);
-                    }
-                    ui.close_menu();
-                }
-
                 ui.separator();
 
                 if ui.button("Settings").clicked() {
@@ -257,15 +247,6 @@ impl TemplateApp {
                         .warning("Please close all open plugins before entering compare mode");
                 } else {
                     self.open_modal_window(ui, EModalState::ModalCompareInit);
-                }
-            }
-
-            if ui.button("🗺 Map").clicked() {
-                if !self.edit_data.plugins.is_empty() {
-                    self.toasts
-                        .warning("Please close all open plugins before entering compare mode");
-                } else {
-                    self.open_modal_window(ui, EModalState::MapInit);
                 }
             }
 
