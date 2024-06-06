@@ -37,8 +37,6 @@ impl Default for EditData {
     }
 }
 
-type CellKey = (i32, i32);
-
 #[derive(Default)]
 pub struct CompareData {
     pub path: PathBuf,
