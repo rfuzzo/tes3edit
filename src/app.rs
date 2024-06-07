@@ -2,36 +2,11 @@ use std::path::PathBuf;
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
-use egui::Pos2;
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use tes3::esp::Plugin;
 
-use crate::{
-    get_unique_id, CompareData, EAppState, EModalState, EScale, EditData, MapData, PluginMetadata,
-};
-
-#[derive(Debug, Clone, Copy)]
-pub struct ZoomData {
-    pub drag_start: Pos2,
-    pub drag_delta: Option<Pos2>,
-    pub drag_offset: Pos2,
-
-    pub zoom: f32,
-    pub zoom_delta: Option<f32>,
-}
-
-impl Default for ZoomData {
-    fn default() -> Self {
-        Self {
-            drag_start: Default::default(),
-            drag_delta: Default::default(),
-            drag_offset: Default::default(),
-            zoom: 1.0,
-            zoom_delta: Default::default(),
-        }
-    }
-}
+use crate::{get_unique_id, CompareData, EAppState, EModalState, EScale, EditData, PluginMetadata};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(Deserialize, Serialize)]
@@ -53,8 +28,6 @@ pub struct TemplateApp {
     pub edit_data: EditData,
     #[serde(skip)]
     pub compare_data: CompareData,
-    #[serde(skip)]
-    pub map_data: MapData,
 
     // runtime ui
     #[serde(skip)]
@@ -65,9 +38,6 @@ pub struct TemplateApp {
     pub modal_open: bool,
     #[serde(skip)]
     pub modal_state: EModalState,
-
-    #[serde(skip)]
-    pub zoom_data: ZoomData,
 
     // wasm
     // https://github.com/ergrelet/resym/blob/e4d243eb9459211ade0c5bae16096712a0615b0b/resym/src/resym_app.rs
@@ -89,7 +59,6 @@ impl Default for TemplateApp {
             last_directory: "/".into(),
             // runtime data
             compare_data: CompareData::default(),
-            map_data: MapData::default(),
             edit_data: EditData::default(),
             // settings
             overwrite: false,
@@ -101,7 +70,6 @@ impl Default for TemplateApp {
             app_state: EAppState::default(),
             modal_state: EModalState::default(),
             modal_open: false,
-            zoom_data: ZoomData::default(),
 
             #[cfg(target_arch = "wasm32")]
             open_file_data: Rc::new(RefCell::new(None)),
@@ -196,9 +164,6 @@ impl TemplateApp {
     pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
         // cleanup
         self.compare_data = CompareData::default();
-        let last_path = self.map_data.path.clone();
-        self.map_data = MapData::default();
-        self.map_data.path = last_path;
 
         // disable ui
         ui.set_enabled(false);
@@ -212,20 +177,6 @@ impl TemplateApp {
         ui.set_enabled(true);
         self.modal_open = false;
         self.modal_state = EModalState::None;
-    }
-
-    /// Settings popup menu
-    pub(crate) fn options_ui(&mut self, ui: &mut egui::Ui) {
-        if ui.button("Refresh").clicked() {
-            self.map_data.refresh_requested = true;
-        }
-
-        ui.separator();
-        ui.label("Overlays");
-        ui.checkbox(&mut self.map_data.overlay_conflicts, "Show conflicts");
-        ui.checkbox(&mut self.map_data.overlay_region, "Show regions");
-        ui.checkbox(&mut self.map_data.overlay_travel, "Show travel");
-        ui.checkbox(&mut self.map_data.tooltip_names, "Show tooltips");
     }
 }
 
@@ -244,7 +195,6 @@ impl eframe::App for TemplateApp {
             match self.modal_state {
                 EModalState::None => panic!("ArgumentException"),
                 EModalState::ModalCompareInit => self.update_modal_compare(ctx),
-                EModalState::MapInit => self.update_modal_map(ctx),
                 EModalState::Settings => self.update_settings(ctx),
             }
         } else {
@@ -252,7 +202,6 @@ impl eframe::App for TemplateApp {
             match self.app_state {
                 EAppState::Main => self.update_edit_view(ctx),
                 EAppState::Compare => self.update_compare_view(ctx, frame),
-                EAppState::Map => self.update_map_view(ctx),
             }
         }
 
