@@ -16,13 +16,6 @@ PRs welcome! Feature requests welcome: <https://github.com/rfuzzo/tes3edit/issue
 - New plugin creation
 - New record creation
 
-### Generate map
-
-- Generate the in-game map from selected plugins
-- Cell selection
-- Tooltips
-- Overlay modes for: regions, conflicts, travel routes
-
 ### Compare plugins
 
 - View conflicts between plugins
@@ -44,18 +37,3 @@ PRs welcome! Feature requests welcome: <https://github.com/rfuzzo/tes3edit/issue
 
 ![Drag and drop](/assets/drag_drop.png)
 
-### Map conflict overlay
-
-![Conflicts](/assets/map_conflicts.png)
-
-### Map Travel routes overlay
-
-![Travel](/assets/map_01.png)
-
-### Map regions overlay
-
-![Regions](/assets/map_regions.png)
-
-### Compare Plugins
-
-![Regions](/assets/conflicts_01.png)
