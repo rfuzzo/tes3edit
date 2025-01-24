@@ -6,14 +6,14 @@ edition = "2021"
 
 
 [dependencies]
-egui = "0.27"
-eframe = { version = "0.27", default-features = false, features = [
+egui = "0.30"
+eframe = { version = "0.30", default-features = false, features = [
   "default_fonts", # Embed the default egui fonts.
   "glow",          # Use the glow rendering backend. Alternative: "wgpu,glow".
   "persistence",   # Enable restoring app state when restarting the app.
 ] }
-egui-notify = "0.14"
-rfd = { version = "0.14", features = ["file-handle-inner"] }
+egui-notify = "0.18"
+rfd = { version = "0.15", features = ["file-handle-inner"] }
 serde = { version = "1", features = ["derive"] }
 strum = { version = "0.26", features = ["derive"] }
 serde_yaml = "0.9"

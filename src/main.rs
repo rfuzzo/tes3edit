@@ -14,7 +14,7 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "tes3edit",
         native_options,
-        Box::new(|cc: &eframe::CreationContext<'_>| Box::new(TemplateApp::new(cc))),
+        Box::new(|cc: &eframe::CreationContext<'_>| Ok(Box::new(TemplateApp::new(cc)))),
     )
 }
 

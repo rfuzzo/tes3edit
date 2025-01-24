@@ -2,10 +2,10 @@
 use std::{cell::RefCell, rc::Rc};
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::RecordsData;
+use crate::{get_all_tags, RecordsData};
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
-use tes3::esp::Plugin;
+use tes3::esp::{EditorId, Plugin, TypeInfo};
 
 use crate::{get_unique_id, CompareData, EAppState, EModalState, EScale, EditData, PluginMetadata};
 
@@ -165,20 +165,18 @@ impl TemplateApp {
     }
 
     /// Opens a modal window of specified state
-    pub(crate) fn open_modal_window(&mut self, ui: &mut egui::Ui, modal: EModalState) {
+    pub(crate) fn open_modal_window(&mut self, _ui: &mut egui::Ui, modal: EModalState) {
         // cleanup
         self.compare_data = CompareData::default();
 
         // disable ui
-        ui.set_enabled(false);
         self.modal_open = true;
         self.modal_state = modal;
     }
 
     /// Opens a modal window of specified state
-    pub(crate) fn close_modal_window(&mut self, ui: &mut egui::Ui) {
+    pub(crate) fn close_modal_window(&mut self, _ui: &mut egui::Ui) {
         // enable ui
-        ui.set_enabled(true);
         self.modal_open = false;
         self.modal_state = EModalState::None;
     }
@@ -202,14 +200,21 @@ impl TemplateApp {
             }
         }
 
-        let mut map: HashMap<String, Vec<String>> = HashMap::new();
+        let mut map: HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
+        for tag in get_all_tags().iter() {
+            map.insert(tag.to_string(), HashMap::new());
+        }
+
         for (plugin_name, plugin) in plugins.iter() {
             for record in plugin.objects.iter() {
-                let id: String = get_unique_id(record);
-                if let Some(plugins) = map.get_mut(&id) {
-                    plugins.push(plugin_name.to_string());
-                } else {
-                    map.insert(id, vec![plugin_name.to_string()]);
+                let id: String = record.editor_id().to_string();
+                let tag = record.tag_str().to_string();
+                if let Some(records) = map.get_mut(&tag) {
+                    if let Some(plugins) = records.get_mut(&id) {
+                        plugins.push(plugin_name.to_string());
+                    } else {
+                        records.insert(id, vec![plugin_name.to_string()]);
+                    }
                 }
             }
         }

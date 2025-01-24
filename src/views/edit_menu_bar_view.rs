@@ -272,7 +272,7 @@ impl TemplateApp {
                         ui.selectable_value(&mut self.scale, EScale::Large, "Large");
                     });
                 // theme
-                egui::global_dark_light_mode_switch(ui);
+                egui::global_theme_preference_switch(ui);
             });
         });
     }

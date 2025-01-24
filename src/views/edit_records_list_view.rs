@@ -25,12 +25,16 @@ impl TemplateApp {
         // editor for a specific plugin
         let tags = get_all_tags();
         let Some(data) = self
-                    .edit_data.plugins
-                    .iter_mut()
-                    .find(|p| p.id == self.edit_data.current_plugin_id) else { return };
+            .edit_data
+            .plugins
+            .iter_mut()
+            .find(|p| p.id == self.edit_data.current_plugin_id)
+        else {
+            return;
+        };
 
         // search bar
-        let _search_text = self.edit_data.search_text.clone();
+        let search_text = self.edit_data.search_text.clone();
         ui.horizontal(|ui| {
             ui.label("Filter: ");
             ui.text_edit_singleline(&mut self.edit_data.search_text);
@@ -63,7 +67,7 @@ impl TemplateApp {
         });
 
         // regenerate records
-        if (_search_text != self.edit_data.search_text) || data.cached_ids.is_empty() {
+        if (search_text != self.edit_data.search_text) || data.cached_ids.is_empty() {
             data.regenerate_id_cache(&self.edit_data.search_text);
         }
 

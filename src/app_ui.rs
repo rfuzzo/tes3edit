@@ -95,32 +95,69 @@ impl TemplateApp {
         // Side Panel
         let tags = get_all_tags();
 
-        egui::SidePanel::left("side_panel")
-            .min_width(250_f32)
-            .show(ctx, |ui| {
-                // search bar
-                let _search_text = self.records_data.search_text.clone();
-                ui.horizontal(|ui| {
-                    ui.label("Filter: ");
-                    ui.text_edit_singleline(&mut self.records_data.search_text);
-                });
-                ui.separator();
-
-                // show all records
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    for (record_name, plugins) in self.records_data.records.iter() {
-                        // record name
-                        ui.label(record_name);
-
-                        ui.horizontal(|ui| {
-                            // plugin name
-                            for plugin_name in plugins.iter() {
-                                ui.label(plugin_name);
-                            }
-                        });
-                    }
-                });
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // search bar
+            let search_text = self.records_data.search_text.clone();
+            ui.horizontal(|ui| {
+                ui.label("Filter: ");
+                ui.text_edit_singleline(&mut self.records_data.search_text);
             });
+            ui.separator();
+
+            // regenerate records
+            if (search_text != self.records_data.search_text) || self.records_data.cache.is_empty()
+            {
+                self.records_data.cache.clear();
+
+                let filter = self.records_data.search_text.to_lowercase();
+
+                for (tag, records) in self.records_data.records.iter() {
+                    // get all records where the key contains the search text
+                    let mut filtered_records = records
+                        .keys()
+                        .filter(|k| k.to_lowercase().contains(&filter))
+                        .cloned()
+                        .collect::<Vec<_>>();
+
+                    filtered_records.sort();
+
+                    self.records_data
+                        .cache
+                        .insert(tag.clone(), filtered_records);
+                }
+            }
+
+            // show all records
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for tag in tags {
+                    let ids_by_tag = self.records_data.cache.get(&tag).unwrap();
+
+                    if ids_by_tag.is_empty() {
+                        continue;
+                    }
+
+                    // add headers and subitems
+                    let _tag_header = egui::CollapsingHeader::new(tag.clone()).show(ui, |ui| {
+                        for id in ids_by_tag.iter() {
+                            // lookup
+                            let plugins = self
+                                .records_data
+                                .records
+                                .get(&tag)
+                                .unwrap()
+                                .get(id)
+                                .unwrap();
+
+                            ui.horizontal(|ui| {
+                                ui.label(id.clone());
+                                ui.separator();
+                                ui.label(format!("{:?}", plugins));
+                            });
+                        }
+                    });
+                }
+            });
+        });
 
         // Central Panel
         //egui::CentralPanel::default().show(ctx, |ui| {});

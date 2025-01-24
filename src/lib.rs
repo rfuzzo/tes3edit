@@ -43,7 +43,8 @@ pub struct RecordsData {
     pub search_text: String,
     pub record_type: ERecordType,
 
-    pub records: HashMap<String, Vec<String>>,
+    pub records: HashMap<String, HashMap<String, Vec<String>>>,
+    pub cache: HashMap<String, Vec<String>>,
 }
 impl Default for RecordsData {
     fn default() -> Self {
@@ -51,6 +52,7 @@ impl Default for RecordsData {
             search_text: Default::default(),
             record_type: ERecordType::MISC,
             records: Default::default(),
+            cache: Default::default(),
         }
     }
 }
@@ -74,6 +76,12 @@ pub struct CompareData {
 pub struct UiData {
     pub id: String,
     pub rows: Vec<(String, Vec<String>)>,
+    pub plugins: Vec<String>,
+}
+
+#[derive(Default)]
+pub struct RecordViewModel {
+    pub id: String,
     pub plugins: Vec<String>,
 }
 
