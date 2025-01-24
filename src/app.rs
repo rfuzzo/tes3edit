@@ -1,7 +1,8 @@
-use std::path::PathBuf;
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
+use std::{collections::HashMap, path::PathBuf};
 
+use crate::RecordsData;
 use egui_notify::Toasts;
 use serde::{Deserialize, Serialize};
 use tes3::esp::Plugin;
@@ -28,6 +29,8 @@ pub struct TemplateApp {
     pub edit_data: EditData,
     #[serde(skip)]
     pub compare_data: CompareData,
+    #[serde(skip)]
+    pub records_data: RecordsData,
 
     // runtime ui
     #[serde(skip)]
@@ -60,6 +63,7 @@ impl Default for TemplateApp {
             // runtime data
             compare_data: CompareData::default(),
             edit_data: EditData::default(),
+            records_data: RecordsData::default(),
             // settings
             overwrite: false,
             use_experimental: false,
@@ -178,6 +182,40 @@ impl TemplateApp {
         self.modal_open = false;
         self.modal_state = EModalState::None;
     }
+
+    pub(crate) fn load_records(&mut self) {
+        if !self.compare_data.path.exists() {
+            if let Ok(cwd) = std::env::current_dir() {
+                self.compare_data.path = cwd;
+            } else {
+                self.compare_data.path = PathBuf::from("");
+            }
+        }
+
+        let plugin_paths = crate::get_plugins_sorted(&self.compare_data.path, false);
+        let mut plugins = Vec::new();
+        for path in plugin_paths.iter() {
+            if let Ok(plugin) = crate::parse_plugin(path) {
+                let filename = path.file_name().unwrap().to_str().unwrap();
+
+                plugins.push((filename, plugin));
+            }
+        }
+
+        let mut map: HashMap<String, Vec<String>> = HashMap::new();
+        for (plugin_name, plugin) in plugins.iter() {
+            for record in plugin.objects.iter() {
+                let id: String = get_unique_id(record);
+                if let Some(plugins) = map.get_mut(&id) {
+                    plugins.push(plugin_name.to_string());
+                } else {
+                    map.insert(id, vec![plugin_name.to_string()]);
+                }
+            }
+        }
+
+        self.records_data.records = map;
+    }
 }
 
 impl eframe::App for TemplateApp {
@@ -200,8 +238,9 @@ impl eframe::App for TemplateApp {
         } else {
             // other main ui views
             match self.app_state {
-                EAppState::Main => self.update_edit_view(ctx),
+                EAppState::SingleEdit => self.update_edit_view(ctx),
                 EAppState::Compare => self.update_compare_view(ctx, frame),
+                EAppState::Records => self.update_records_view(ctx),
             }
         }
 

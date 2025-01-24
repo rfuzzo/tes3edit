@@ -4,8 +4,8 @@ use std::path::Path;
 use crate::get_plugin_id;
 
 use crate::{
-    get_plugin_names, get_unique_id, save_patch, save_plugin, EModalState, EScale, PluginMetadata,
-    TemplateApp,
+    get_plugin_names, get_unique_id, save_patch, save_plugin, EAppState, EModalState, EScale,
+    PluginMetadata, TemplateApp,
 };
 use egui::Color32;
 use tes3::esp::{Header, Plugin};
@@ -143,6 +143,16 @@ impl TemplateApp {
                             .warning("Please close all open plugins before entering compare mode");
                     } else {
                         self.open_modal_window(ui, EModalState::ModalCompareInit);
+                    }
+                    ui.close_menu();
+                }
+
+                if ui.button("Records View").clicked() {
+                    if !self.edit_data.plugins.is_empty() {
+                        self.toasts
+                            .warning("Please close all open plugins before entering compare mode");
+                    } else {
+                        self.app_state = EAppState::Records;
                     }
                     ui.close_menu();
                 }

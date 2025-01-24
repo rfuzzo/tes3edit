@@ -19,7 +19,7 @@ impl TemplateApp {
                     // calculate conflicts
                     // load plugins into memory
                     for vm in self.compare_data.plugins.iter_mut().filter(|e| e.enabled) {
-                        if let Ok(plugin) = Plugin::from_path(&vm.path.clone()) {
+                        if let Ok(plugin) = Plugin::from_path(vm.path.clone()) {
                             vm.plugin = plugin;
                             vm.records = vm
                                 .plugin

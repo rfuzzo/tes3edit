@@ -2,6 +2,8 @@
 
 use std::{
     collections::HashMap,
+    fs::{self, File},
+    io::{self, Error, ErrorKind, Read},
     path::{Path, PathBuf},
     time::SystemTime,
 };
@@ -33,6 +35,22 @@ impl Default for EditData {
             search_text: Default::default(),
             record_type: ERecordType::MISC,
             copied_record: None,
+        }
+    }
+}
+
+pub struct RecordsData {
+    pub search_text: String,
+    pub record_type: ERecordType,
+
+    pub records: HashMap<String, Vec<String>>,
+}
+impl Default for RecordsData {
+    fn default() -> Self {
+        Self {
+            search_text: Default::default(),
+            record_type: ERecordType::MISC,
+            records: Default::default(),
         }
     }
 }
@@ -136,7 +154,8 @@ pub fn generate_conflict_map(data: &CompareData) -> std::collections::HashMap<St
 #[derive(Default, PartialEq, Debug)]
 pub enum EAppState {
     #[default]
-    Main,
+    SingleEdit,
+    Records,
     Compare,
 }
 
@@ -575,4 +594,53 @@ where
         });
     }
     results
+}
+
+fn get_plugins_sorted<P>(path: &P, use_omw_plugins: bool) -> Vec<PathBuf>
+where
+    P: AsRef<Path>,
+{
+    // get plugins
+    let mut plugins = get_plugins_in_folder(path, use_omw_plugins);
+
+    // sort
+    plugins.sort_by(|a, b| {
+        fs::metadata(a.clone())
+            .expect("filetime")
+            .modified()
+            .unwrap()
+            .cmp(
+                &fs::metadata(b.clone())
+                    .expect("filetime")
+                    .modified()
+                    .unwrap(),
+            )
+    });
+    plugins
+}
+
+/// Parse the contents of the given path into a TES3 Plugin.
+/// Whether to parse as JSON or binary is inferred from first character.
+/// taken from: https://github.com/Greatness7/tes3conv
+fn parse_plugin(path: &PathBuf) -> io::Result<Plugin> {
+    let mut raw_data = vec![];
+    File::open(path)?.read_to_end(&mut raw_data)?;
+
+    let mut plugin = Plugin::new();
+
+    match raw_data.first() {
+        Some(b'T') => {
+            // if it starts with a 'T' assume it's a TES3 file
+            plugin.load_bytes(&raw_data)?;
+        }
+        _ => {
+            // anything else is guaranteed to be invalid input
+            return Err(Error::new(ErrorKind::InvalidData, "Invalid input."));
+        }
+    }
+
+    // sort objects so that diffs are a little more useful
+    //plugin.sort();    //TODO
+
+    Ok(plugin)
 }

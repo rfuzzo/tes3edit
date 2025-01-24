@@ -1,6 +1,6 @@
 use tes3::esp::Plugin;
 
-use crate::TemplateApp;
+use crate::{get_all_tags, EAppState, EModalState, TemplateApp};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -38,6 +38,92 @@ impl TemplateApp {
                 }
             }
         });
+    }
+
+    pub fn update_records_view(&mut self, ctx: &egui::Context) {
+        // Top Panel
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                // File Menu
+                ui.menu_button("File", |ui| {
+                    // Quit button
+                    #[cfg(not(target_arch = "wasm32"))]
+                    if ui.button("Quit").clicked() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                });
+
+                // View Menu
+                ui.menu_button("View", |ui| {
+                    if self.use_experimental && ui.button("Compare View").clicked() {
+                        if !self.edit_data.plugins.is_empty() {
+                            self.toasts.warning(
+                                "Please close all open plugins before entering compare mode",
+                            );
+                        } else {
+                            self.open_modal_window(ui, EModalState::ModalCompareInit);
+                        }
+                        ui.close_menu();
+                    }
+
+                    if ui.button("Records View").clicked() {
+                        if !self.edit_data.plugins.is_empty() {
+                            self.toasts.warning(
+                                "Please close all open plugins before entering compare mode",
+                            );
+                        } else {
+                            self.app_state = EAppState::Records;
+                        }
+                        ui.close_menu();
+                    }
+
+                    ui.separator();
+
+                    if ui.button("Settings").clicked() {
+                        self.open_modal_window(ui, EModalState::Settings);
+                        ui.close_menu();
+                    }
+                });
+            });
+        });
+
+        // load plugins
+        if self.records_data.records.is_empty() {
+            self.load_records();
+        }
+
+        // Side Panel
+        let tags = get_all_tags();
+
+        egui::SidePanel::left("side_panel")
+            .min_width(250_f32)
+            .show(ctx, |ui| {
+                // search bar
+                let _search_text = self.records_data.search_text.clone();
+                ui.horizontal(|ui| {
+                    ui.label("Filter: ");
+                    ui.text_edit_singleline(&mut self.records_data.search_text);
+                });
+                ui.separator();
+
+                // show all records
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for (record_name, plugins) in self.records_data.records.iter() {
+                        // record name
+                        ui.label(record_name);
+
+                        ui.horizontal(|ui| {
+                            // plugin name
+                            for plugin_name in plugins.iter() {
+                                ui.label(plugin_name);
+                            }
+                        });
+                    }
+                });
+            });
+
+        // Central Panel
+        //egui::CentralPanel::default().show(ctx, |ui| {});
     }
 
     /// Main single plugin edit view

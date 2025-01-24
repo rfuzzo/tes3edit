@@ -5,7 +5,7 @@ impl TemplateApp {
         // Menu Bar
         egui::menu::bar(ui, |ui| {
             if ui.button("Exit").clicked() {
-                self.app_state = EAppState::Main;
+                self.app_state = EAppState::SingleEdit;
             }
         });
     }
