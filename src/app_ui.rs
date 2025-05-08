@@ -217,7 +217,7 @@ impl TemplateApp {
         egui::SidePanel::left("side_panel")
             .min_width(250_f32)
             .show(ctx, |ui| {
-                self.records_list_view(ui);
+                self.records_list_view(ui, ctx);
             });
 
         // Central Panel

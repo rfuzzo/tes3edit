@@ -4,7 +4,7 @@ use tes3::esp::TypeInfo;
 use crate::{create, create_from_tag, get_all_tags, get_unique_id, ERecordType, TemplateApp};
 
 impl TemplateApp {
-    pub fn records_list_view(&mut self, ui: &mut egui::Ui) {
+    pub fn records_list_view(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         // heading
         if let Some(data) = self
             .edit_data
@@ -146,10 +146,7 @@ impl TemplateApp {
 
                             // copy id
                             if ui.button("Copy ID").clicked() {
-                                ui.output_mut(|o| {
-                                    // unwrap is save here since we always preprend the fourcc to all ids
-                                    o.copied_text = id.clone().get(5..).unwrap().to_string();
-                                });
+                                ctx.copy_text(id.clone().get(5..).unwrap().to_string());
                                 ui.close_menu();
                             }
 

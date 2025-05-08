@@ -300,7 +300,7 @@ impl TemplateApp {
                             bg_color = Color32::LIGHT_GRAY;
                         }
 
-                        egui::Frame::none().fill(bg_color).show(ui, |ui| {
+                        egui::Frame::new().fill(bg_color).show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 // tab item name
                                 if ui.button(name).clicked() {
